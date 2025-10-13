@@ -1,0 +1,275 @@
+@startuml
+
+' Entity Classes - MVP Core Tables
+class User {
+    +id: UUID
+    +name: String
+    +email: String
+    +password: String
+    +role: UserRole
+    +phone: String
+    +address: String
+    +status: UserStatus
+    +emailVerified: Boolean
+    +createdAt: LocalDateTime
+    +updatedAt: LocalDateTime
+    --
+    +validateEmail(): Boolean
+    +hashPassword(): String
+    +isActive(): Boolean
+}
+
+enum UserRole {
+    CUSTOMER
+    ADMIN
+    PROVIDER
+}
+
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+}
+
+class ServiceCategory {
+    +id: UUID
+    +name: String
+    +description: String
+    +isActive: Boolean
+    +createdAt: LocalDateTime
+    +updatedAt: LocalDateTime
+    --
+    +isAvailable(): Boolean
+}
+
+class Service {
+    +id: UUID
+    +categoryId: UUID
+    +name: String
+    +description: String
+    +price: BigDecimal
+    +duration: Integer
+    +isActive: Boolean
+    +createdAt: LocalDateTime
+    +updatedAt: LocalDateTime
+    --
+    +calculateTotalPrice(duration: Integer): BigDecimal
+    +isAvailable(): Boolean
+}
+
+class Booking {
+    +id: UUID
+    +userId: UUID
+    +serviceId: UUID
+    +providerId: UUID
+    +status: BookingStatus
+    +scheduledDate: LocalDate
+    +scheduledTime: LocalTime
+    +duration: Integer
+    +totalAmount: BigDecimal
+    +paymentStatus: PaymentStatus
+    +specialInstructions: String
+    +createdAt: LocalDateTime
+    +updatedAt: LocalDateTime
+    --
+    +canBeCancelled(): Boolean
+    +canBeRescheduled(): Boolean
+    +calculateRefundAmount(): BigDecimal
+}
+
+enum BookingStatus {
+    PENDING
+    CONFIRMED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+    RESCHEDULED
+}
+
+enum PaymentStatus {
+    PENDING
+    PAID
+    FAILED
+    REFUNDED
+    PARTIAL_REFUND
+}
+
+class Provider {
+    +id: UUID
+    +name: String
+    +email: String
+    +phone: String
+    +qualification: String
+    +experience: Integer
+    +availabilityStatus: AvailabilityStatus
+    +rating: Double
+    +totalRatings: Integer
+    +isVerified: Boolean
+    +documents: List<String>
+    +createdAt: LocalDateTime
+    +updatedAt: LocalDateTime
+    --
+    +isAvailable(date: LocalDate, time: LocalTime): Boolean
+    +updateRating(newRating: Integer): void
+    +getAverageRating(): Double
+}
+
+enum AvailabilityStatus {
+    AVAILABLE
+    BUSY
+    OFF_DUTY
+    ON_LEAVE
+}
+
+' Phase 1.5 Entities
+class Review {
+    +id: UUID
+    +bookingId: UUID
+    +userId: UUID
+    +providerId: UUID
+    +rating: Integer
+    +comment: String
+    +createdAt: LocalDateTime
+    --
+    +isValidRating(): Boolean
+}
+
+class Payment {
+    +id: UUID
+    +bookingId: UUID
+    +amount: BigDecimal
+    +method: PaymentMethod
+    +status: PaymentStatus
+    +transactionId: String
+    +paymentGateway: String
+    +paidAt: LocalDateTime
+    +createdAt: LocalDateTime
+    --
+    +processRefund(amount: BigDecimal): Boolean
+    +generateInvoice(): String
+}
+
+enum PaymentMethod {
+    ONLINE
+    CASH
+    CARD
+    UPI
+}
+
+' Service Interfaces - MVP
+
+interface IUserService {
+    +createUser(user: User): User
+    +getUserById(id: UUID): User
+    +updateUser(id: UUID, user: User): User
+    +deleteUser(id: UUID): Boolean
+    +authenticateUser(email: String, password: String): String
+    +verifyEmail(token: String): Boolean
+    +resetPassword(email: String): Boolean
+}
+
+interface IBookingService {
+    +createBooking(booking: Booking): Booking
+    +getBookingById(id: UUID): Booking
+    +updateBookingStatus(id: UUID, status: BookingStatus): Booking
+    +cancelBooking(id: UUID): Boolean
+    +rescheduleBooking(id: UUID, newDate: LocalDate, newTime: LocalTime): Booking
+    +getBookingsByUser(userId: UUID): List<Booking>
+    +assignProviderToBooking(bookingId: UUID, providerId: UUID): Boolean
+}
+
+interface IProviderService {
+    +createProvider(provider: Provider): Provider
+    +getProviderById(id: UUID): Provider
+    +updateProviderAvailability(id: UUID, status: AvailabilityStatus): Provider
+    +getAvailableProviders(date: LocalDate, time: LocalTime): List<Provider>
+    +updateProviderRating(id: UUID, rating: Integer): Provider
+}
+
+interface IPaymentService {
+    +processPayment(payment: Payment): Payment
+    +getPaymentById(id: UUID): Payment
+    +processRefund(paymentId: UUID, amount: BigDecimal): Boolean
+    +generateInvoice(paymentId: UUID): String
+}
+
+interface INotificationService {
+    +sendEmailNotification(userId: UUID, message: String): Boolean
+    +sendBookingConfirmation(bookingId: UUID): Boolean
+    +sendBookingUpdate(bookingId: UUID, status: BookingStatus): Boolean
+}
+
+' Repository Interfaces - MVP
+interface IUserRepository {
+    +save(user: User): User
+    +findById(id: UUID): Optional<User>
+    +findByEmail(email: String): Optional<User>
+    +findAll(): List<User>
+    +delete(id: UUID): void
+}
+
+interface IBookingRepository {
+    +save(booking: Booking): Booking
+    +findById(id: UUID): Optional<Booking>
+    +findByUserId(userId: UUID): List<Booking>
+    +findByStatus(status: BookingStatus): List<Booking>
+    +findByDateRange(startDate: LocalDate, endDate: LocalDate): List<Booking>
+}
+
+interface IProviderRepository {
+    +save(provider: Provider): Provider
+    +findById(id: UUID): Optional<Provider>
+    +findAvailableProviders(date: LocalDate, time: LocalTime): List<Provider>
+}
+
+' Controller Classes - MVP
+class UserController {
+    -userService: IUserService
+    --
+    +register(userDto: UserRegistrationDto): ResponseEntity<UserDto>
+    +login(loginDto: LoginDto): ResponseEntity<AuthResponseDto>
+    +getProfile(userId: UUID): ResponseEntity<UserDto>
+    +updateProfile(userId: UUID, userDto: UserDto): ResponseEntity<UserDto>
+    +verifyEmail(token: String): ResponseEntity<String>
+    +resetPassword(email: String): ResponseEntity<String>
+}
+
+class BookingController {
+    -bookingService: IBookingService
+    --
+    +createBooking(bookingDto: CreateBookingDto): ResponseEntity<BookingDto>
+    +getBooking(bookingId: UUID): ResponseEntity<BookingDto>
+    +updateBookingStatus(bookingId: UUID, status: BookingStatus): ResponseEntity<BookingDto>
+    +cancelBooking(bookingId: UUID): ResponseEntity<String>
+    +rescheduleBooking(bookingId: UUID, rescheduleDto: RescheduleBookingDto): ResponseEntity<BookingDto>
+    +getUserBookings(userId: UUID): ResponseEntity<List<BookingDto>>
+}
+
+class ProviderController {
+    -providerService: IProviderService
+    --
+    +createProvider(providerDto: CreateProviderDto): ResponseEntity<ProviderDto>
+    +getProvider(providerId: UUID): ResponseEntity<ProviderDto>
+    +updateAvailability(providerId: UUID, status: AvailabilityStatus): ResponseEntity<ProviderDto>
+    +getAvailableProviders(date: LocalDate, time: LocalTime): ResponseEntity<List<ProviderDto>>
+}
+
+' Relationships - MVP Core Tables
+User ||--o{ Booking : "places"
+ServiceCategory ||--o{ Service : "contains"
+Service ||--o{ Booking : "booked for"
+Booking }o--|| Provider : "assigned to"
+Booking ||--o{ Payment : "has"
+Booking ||--o{ Review : "has"
+
+' Service implementations
+IUserService <|.. UserController
+IBookingService <|.. BookingController
+IProviderService <|.. ProviderController
+
+' Repository relationships
+IUserRepository <|-- UserController
+IBookingRepository <|-- BookingController
+IProviderRepository <|-- ProviderController
+
+@enduml

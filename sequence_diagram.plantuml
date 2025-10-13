@@ -1,0 +1,359 @@
+@startuml
+
+title "Lucknow Nursing Healthcare Services - MVP Key User Flows"
+
+' User Registration Flow
+group User Registration Flow
+    actor Customer as customer
+    participant "Flutter App" as app
+    participant "Spring Boot Backend" as backend
+    participant "Auth Module" as auth
+    participant "Email Service" as email
+    participant "Database" as db
+
+    customer -> app: Register Account
+    app -> backend: POST /api/auth/register
+        note right
+            Input: {
+                "name": "John Doe",
+                "email": "john@example.com",
+                "password": "password123",
+                "phone": "+91-9876543210",
+                "address": "Lucknow Address"
+            }
+        end note
+    backend -> auth: validateAndCreateUser()
+    auth -> db: INSERT INTO users
+    db --> auth: User Created
+    auth -> email: sendVerificationEmail()
+        note right
+            Email: {
+                "to": "john@example.com",
+                "subject": "Verify Your Account",
+                "verificationToken": "abc123xyz"
+            }
+        end note
+    email --> auth: Email Sent
+    auth --> backend: User Registration Response
+        note right
+            Output: {
+                "success": true,
+                "message": "Registration successful. Please verify email.",
+                "userId": "uuid-123",
+                "emailVerificationRequired": true
+            }
+        end note
+    backend --> app: Registration Success
+    app --> customer: Show Verification Message
+end
+
+' Service Booking Flow
+group Service Booking Flow
+    actor Customer as customer2
+    participant "Flutter App" as app2
+    participant "Spring Boot Backend" as backend2
+    participant "Booking Service" as bookingSvc
+    participant "Provider Service" as providerSvc
+    participant "Payment Service" as paymentSvc
+    participant "Notification Service" as notifSvc
+    participant "Database" as db2
+
+    customer2 -> app2: Select Nursing Service
+    app2 -> backend2: GET /api/services/nursing
+    backend2 -> bookingSvc: getAvailableServices()
+    bookingSvc -> db2: SELECT FROM services
+    db2 --> bookingSvc: Service List
+    bookingSvc --> backend2: Available Services
+        note right
+            Output: {
+                "services": [
+                    {
+                        "id": "service-uuid-1",
+                        "name": "Home Nursing Care",
+                        "price": 500.00,
+                        "duration": 8,
+                        "description": "Professional nursing care at home"
+                    }
+                ]
+            }
+        end note
+    backend2 --> app2: Service Options
+    app2 --> customer2: Display Services
+
+    customer2 -> app2: Book Service + Select Date/Time
+    app2 -> backend2: GET /api/providers/available
+        note right
+            Input: {
+                "date": "2024-01-15",
+                "time": "09:00",
+                "serviceType": "NURSING",
+                "duration": 8
+            }
+        end note
+    backend2 -> providerSvc: getAvailableProviders()
+    providerSvc -> db2: SELECT available providers
+    db2 --> providerSvc: Available Provider List
+    providerSvc --> backend2: Provider Options
+        note right
+            Output: {
+                "availableProviders": [
+                    {
+                        "id": "provider-uuid-1",
+                        "name": "Nurse Priya",
+                        "qualification": "B.Sc Nursing",
+                        "experience": 5,
+                        "rating": 4.8
+                    }
+                ]
+            }
+        end note
+    backend2 --> app2: Available Providers
+    app2 --> customer2: Show Available Slots
+
+    customer2 -> app2: Confirm Booking
+    app2 -> backend2: POST /api/bookings/create
+        note right
+            Input: {
+                "serviceId": "service-uuid-1",
+                "providerId": "provider-uuid-1",
+                "scheduledDate": "2024-01-15",
+                "scheduledTime": "09:00:00",
+                "duration": 8,
+                "specialInstructions": "Patient has mobility issues"
+            }
+        end note
+    backend2 -> bookingSvc: createBooking()
+    bookingSvc -> db2: INSERT INTO bookings
+    db2 --> bookingSvc: Booking Created
+    bookingSvc -> providerSvc: assignProviderToBooking()
+    providerSvc -> db2: UPDATE bookings SET provider_id
+    db2 --> providerSvc: Provider Assigned
+    providerSvc --> bookingSvc: Provider Assigned
+    bookingSvc --> backend2: Booking Created Response
+        note right
+            Output: {
+                "bookingId": "booking-uuid-123",
+                "status": "PENDING",
+                "totalAmount": 4000.00,
+                "paymentRequired": true,
+                "assignedProvider": {
+                    "name": "Nurse Priya",
+                    "phone": "+91-9876543210"
+                }
+            }
+        end note
+    backend2 --> app2: Booking Confirmation
+    app2 --> customer2: Show Payment Screen
+end
+
+' Payment Processing Flow (Phase 1.5)
+group Payment Processing Flow
+    customer2 -> app2: Proceed to Payment
+    app2 -> backend2: POST /api/payments/initiate
+        note right
+            Input: {
+                "bookingId": "booking-uuid-123",
+                "amount": 4000.00,
+                "method": "ONLINE"
+            }
+        end note
+    backend2 -> paymentSvc: initiatePayment()
+    paymentSvc -> db2: INSERT INTO payments
+    db2 --> paymentSvc: Payment Record Created
+    
+    participant "Razorpay/Stripe Gateway" as payment_gateway
+    paymentSvc -> payment_gateway: createPaymentOrder()
+        note right
+            Gateway Request: {
+                "amount": 400000,
+                "currency": "INR",
+                "receipt": "booking-uuid-123"
+            }
+        end note
+    payment_gateway --> paymentSvc: Payment Order Created
+        note right
+            Gateway Response: {
+                "id": "order_gateway_123",
+                "amount": 400000,
+                "currency": "INR",
+                "status": "created"
+            }
+        end note
+    paymentSvc --> backend2: Payment Gateway Response
+    backend2 --> app2: Payment Details
+    app2 --> customer2: Show Payment Interface
+
+    customer2 -> payment_gateway: Complete Payment
+    payment_gateway -> paymentSvc: Payment Webhook
+        note right
+            Webhook Data: {
+                "event": "payment.captured",
+                "payload": {
+                    "payment_id": "pay_gateway_456",
+                    "order_id": "order_gateway_123",
+                    "status": "captured",
+                    "amount": 400000
+                }
+            }
+        end note
+    paymentSvc -> db2: UPDATE payments SET status='PAID'
+    db2 --> paymentSvc: Payment Updated
+    paymentSvc -> bookingSvc: updateBookingPaymentStatus()
+    bookingSvc -> db2: UPDATE bookings SET payment_status='PAID'
+    db2 --> bookingSvc: Booking Updated
+    bookingSvc -> notifSvc: sendPaymentConfirmation()
+    notifSvc -> customer2: Payment Success Email
+        note right
+            Notification: {
+                "type": "PAYMENT_CONFIRMATION",
+                "message": "Payment of ₹4000 successful for Booking #123",
+                "channels": ["EMAIL"]
+            }
+        end note
+end
+
+' Provider Dashboard Flow
+group Provider Dashboard Flow
+    actor Provider as provider
+    participant "Provider Web Dashboard" as providerApp
+    participant "Spring Boot Backend" as backend3
+    participant "Provider Service" as providerSvc2
+    participant "Booking Service" as bookingSvc2
+    participant "Database" as db3
+
+    provider -> providerApp: Login to Dashboard
+    providerApp -> backend3: POST /api/auth/login
+    backend3 -> providerSvc2: authenticateProvider()
+    providerSvc2 -> db3: SELECT FROM providers
+    db3 --> providerSvc2: Provider Found
+    providerSvc2 --> backend3: Authentication Success
+    backend3 --> providerApp: Login Success
+    providerApp --> provider: Show Dashboard
+
+    provider -> providerApp: View Assigned Bookings
+    providerApp -> backend3: GET /api/providers/{id}/bookings
+    backend3 -> bookingSvc2: getProviderBookings()
+    bookingSvc2 -> db3: SELECT FROM bookings WHERE provider_id
+    db3 --> bookingSvc2: Bookings List
+    bookingSvc2 --> backend3: Provider Bookings
+        note right
+            Output: {
+                "bookings": [
+                    {
+                        "id": "booking-uuid-123",
+                        "customerName": "John Doe",
+                        "serviceName": "Home Nursing Care",
+                        "scheduledDate": "2024-01-15",
+                        "scheduledTime": "09:00:00",
+                        "status": "PENDING",
+                        "specialInstructions": "Patient has mobility issues"
+                    }
+                ]
+            }
+        end note
+    backend3 --> providerApp: Bookings Data
+    providerApp --> provider: Display Bookings
+
+    provider -> providerApp: Update Booking Status
+    providerApp -> backend3: PUT /api/bookings/{id}/status
+        note right
+            Input: {
+                "bookingId": "booking-uuid-123",
+                "status": "IN_PROGRESS",
+                "providerNotes": "Started nursing care for patient"
+            }
+        end note
+    backend3 -> bookingSvc2: updateBookingStatus()
+    bookingSvc2 -> db3: UPDATE bookings SET status='IN_PROGRESS'
+    db3 --> bookingSvc2: Booking Updated
+    bookingSvc2 --> backend3: Status Update Response
+        note right
+            Output: {
+                "bookingId": "booking-uuid-123",
+                "status": "IN_PROGRESS",
+                "updatedAt": "2024-01-15T09:05:00Z"
+            }
+        end note
+    backend3 --> providerApp: Status Updated
+    providerApp --> provider: Show Success Message
+end
+
+' Admin Provider Management Flow
+group Admin Provider Management Flow
+    actor Admin as admin
+    participant "Admin Dashboard" as adminApp
+    participant "Spring Boot Backend" as backend4
+    participant "Provider Service" as providerSvc3
+    participant "Database" as db4
+
+    admin -> adminApp: Add New Provider
+    adminApp -> backend4: POST /api/admin/providers/create
+        note right
+            Input: {
+                "name": "Dr. Rajesh Kumar",
+                "email": "rajesh@example.com",
+                "phone": "+91-9876543210",
+                "qualification": "BPT, MPT",
+                "experience": 8,
+                "documents": ["aadhar.pdf", "certificate.pdf"]
+            }
+        end note
+    backend4 -> providerSvc3: createProvider()
+    providerSvc3 -> db4: INSERT INTO providers
+    db4 --> providerSvc3: Provider Created
+    providerSvc3 --> backend4: Provider Creation Response
+        note right
+            Output: {
+                "providerId": "provider-uuid-456",
+                "name": "Dr. Rajesh Kumar",
+                "status": "PENDING_VERIFICATION",
+                "documentsUploaded": 2,
+                "createdAt": "2024-01-10T10:30:00Z"
+            }
+        end note
+    backend4 --> adminApp: Provider Added Successfully
+    adminApp --> admin: Show Success Message
+end
+
+' Booking Status Update Flow
+group Booking Status Update Flow
+    participant "Provider Web Dashboard" as providerApp2
+    participant "Spring Boot Backend" as backend5
+    participant "Booking Service" as bookingSvc3
+    participant "Notification Service" as notifSvc2
+    participant "Database" as db5
+
+    providerApp2 -> backend5: PUT /api/bookings/{bookingId}/status
+        note right
+            Input: {
+                "bookingId": "booking-uuid-123",
+                "status": "IN_PROGRESS",
+                "providerNotes": "Started nursing care for patient"
+            }
+        end note
+    backend5 -> bookingSvc3: updateBookingStatus()
+    bookingSvc3 -> db5: UPDATE bookings SET status='IN_PROGRESS'
+    db5 --> bookingSvc3: Booking Updated
+    bookingSvc3 -> notifSvc2: sendStatusUpdateNotification()
+    notifSvc2 -> customer2: Send Status Update
+        note right
+            Notification: {
+                "type": "BOOKING_UPDATE",
+                "message": "Your nursing service has started. Provider: Nurse Priya",
+                "bookingId": "booking-uuid-123",
+                "channels": ["EMAIL"]
+            }
+        end note
+    bookingSvc3 --> backend5: Status Update Response
+        note right
+            Output: {
+                "bookingId": "booking-uuid-123",
+                "status": "IN_PROGRESS",
+                "updatedAt": "2024-01-15T09:05:00Z",
+                "nextStatusOptions": ["COMPLETED", "CANCELLED"]
+            }
+        end note
+    backend5 --> providerApp2: Update Confirmed
+end
+
+@enduml

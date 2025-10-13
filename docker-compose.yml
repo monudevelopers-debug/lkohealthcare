@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: lucknow-healthcare-db
+    environment:
+      POSTGRES_DB: lucknow_healthcare
+      POSTGRES_USER: healthcare_user
+      POSTGRES_PASSWORD: healthcare_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - healthcare-network
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lucknow-healthcare-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/lucknow_healthcare
+      SPRING_DATASOURCE_USERNAME: healthcare_user
+      SPRING_DATASOURCE_PASSWORD: healthcare_password
+      JWT_SECRET: your-jwt-secret-key-here
+      JWT_EXPIRATION: 900000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - healthcare-network
+    volumes:
+      - ./backend/logs:/app/logs
+
+  # Flutter Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lucknow-healthcare-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - healthcare-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # Provider Dashboard
+  provider-dashboard:
+    build:
+      context: ./provider-dashboard
+      dockerfile: Dockerfile
+    container_name: lucknow-healthcare-provider-dashboard
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    networks:
+      - healthcare-network
+    volumes:
+      - ./provider-dashboard:/app
+      - /app/node_modules
+
+  # Admin Dashboard
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile
+    container_name: lucknow-healthcare-admin-dashboard
+    ports:
+      - "3002:3000"
+    depends_on:
+      - backend
+    networks:
+      - healthcare-network
+    volumes:
+      - ./admin-dashboard:/app
+      - /app/node_modules
+
+  # Redis for Caching (Optional for MVP)
+  redis:
+    image: redis:7-alpine
+    container_name: lucknow-healthcare-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - healthcare-network
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  healthcare-network:
+    driver: bridge

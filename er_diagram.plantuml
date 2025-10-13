@@ -1,0 +1,126 @@
+@startuml
+
+!define table(x) class x << (T,#FFAAAA) >>
+!define pk(x) <u>x</u>
+!define fk(x) <i>x</i>
+
+title "Lucknow Nursing Healthcare Services - MVP Database ER Diagram"
+
+table(users) {
+  pk(id) : UUID
+  --
+  * name : VARCHAR(100)
+  * email : VARCHAR(255) <<unique>>
+  * password : VARCHAR(255)
+  * role : ENUM('CUSTOMER', 'ADMIN', 'PROVIDER')
+  * phone : VARCHAR(15)
+  address : TEXT
+  * status : ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED')
+  * email_verified : BOOLEAN
+  email_verification_token : VARCHAR(255)
+  password_reset_token : VARCHAR(255)
+  password_reset_expires : TIMESTAMP
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+table(service_categories) {
+  pk(id) : UUID
+  --
+  * name : VARCHAR(100)
+  * description : TEXT
+  * is_active : BOOLEAN
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+table(services) {
+  pk(id) : UUID
+  --
+  fk(category_id) : UUID
+  * name : VARCHAR(100)
+  * description : TEXT
+  * price : DECIMAL(10,2)
+  * duration : INTEGER
+  * is_active : BOOLEAN
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+table(providers) {
+  pk(id) : UUID
+  --
+  * name : VARCHAR(100)
+  * email : VARCHAR(255) <<unique>>
+  * phone : VARCHAR(15)
+  * qualification : VARCHAR(255)
+  * experience : INTEGER
+  * availability_status : ENUM('AVAILABLE', 'BUSY', 'OFF_DUTY', 'ON_LEAVE')
+  * rating : DECIMAL(3,2)
+  * total_ratings : INTEGER
+  * is_verified : BOOLEAN
+  documents : JSON
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+table(bookings) {
+  pk(id) : UUID
+  --
+  fk(user_id) : UUID
+  fk(service_id) : UUID
+  fk(provider_id) : UUID
+  * status : ENUM('PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'RESCHEDULED')
+  * scheduled_date : DATE
+  * scheduled_time : TIME
+  * duration : INTEGER
+  * total_amount : DECIMAL(10,2)
+  * payment_status : ENUM('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'PARTIAL_REFUND')
+  special_instructions : TEXT
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+' Phase 1.5 Tables
+table(reviews) {
+  pk(id) : UUID
+  --
+  fk(booking_id) : UUID
+  fk(user_id) : UUID
+  fk(provider_id) : UUID
+  * rating : INTEGER
+  review : TEXT
+  * created_at : TIMESTAMP
+}
+
+table(payments) {
+  pk(id) : UUID
+  --
+  fk(booking_id) : UUID
+  * amount : DECIMAL(10,2)
+  * method : ENUM('ONLINE', 'CASH', 'CARD', 'UPI')
+  * status : ENUM('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'PARTIAL_REFUND')
+  transaction_id : VARCHAR(255)
+  payment_gateway : VARCHAR(50)
+  gateway_response : JSON
+  paid_at : TIMESTAMP
+  * created_at : TIMESTAMP
+}
+
+' MVP Core Tables Complete
+
+' Relationships - MVP Core Tables
+users ||--o{ bookings : "user_id"
+users ||--o{ reviews : "user_id"
+
+service_categories ||--o{ services : "category_id"
+
+services ||--o{ bookings : "service_id"
+
+providers ||--o{ bookings : "provider_id"
+providers ||--o{ reviews : "provider_id"
+
+bookings ||--|| payments : "booking_id"
+bookings ||--o{ reviews : "booking_id"
+
+@enduml

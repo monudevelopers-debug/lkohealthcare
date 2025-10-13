@@ -1,0 +1,67 @@
+@startuml
+!define RECTANGLE class
+
+package "Frontend Layer" {
+    [Flutter Mobile App] as mobile
+    [Provider Web Dashboard] as provider_web
+    [Admin Web Dashboard] as admin_web
+}
+
+package "Backend Layer" {
+    [Spring Boot Application] as backend
+    package "Core Modules" {
+        [Authentication Module] as auth
+        [User Management Module] as user_mgmt
+        [Booking Management Module] as booking_mgmt
+        [Service Management Module] as service_mgmt
+        [Provider Management Module] as provider_mgmt
+        [Payment Module] as payment
+        [Notification Module] as notification
+    }
+}
+
+package "External Services" {
+    [Razorpay/Stripe API] as payment_gateway
+    [Email Service (SMTP)] as email_service
+}
+
+package "Data Layer" {
+    database "PostgreSQL Database" {
+        [users] as users_table
+        [service_categories] as categories_table
+        [services] as services_table
+        [bookings] as bookings_table
+        [providers] as providers_table
+        [payments] as payments_table
+        [reviews] as reviews_table
+    }
+}
+
+' Frontend connections
+mobile --> backend : HTTPS/REST API
+provider_web --> backend : HTTPS/REST API
+admin_web --> backend : HTTPS/REST API
+
+' Backend module connections
+backend --> auth : Authentication
+backend --> user_mgmt : User Operations
+backend --> booking_mgmt : Booking Operations
+backend --> service_mgmt : Service Operations
+backend --> provider_mgmt : Provider Operations
+backend --> payment : Payment Operations
+backend --> notification : Notifications
+
+' Database connections
+backend --> users_table : User Data
+backend --> categories_table : Service Categories
+backend --> services_table : Service Data
+backend --> bookings_table : Booking Data
+backend --> providers_table : Provider Data
+backend --> payments_table : Payment Data
+backend --> reviews_table : Review Data
+
+' External service connections
+payment --> payment_gateway : Payment Processing
+notification --> email_service : Email Notifications
+
+@enduml

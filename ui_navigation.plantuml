@@ -1,0 +1,222 @@
+@startuml
+
+title "UI Navigation Flow - Lucknow Nursing Healthcare Services MVP"
+
+' Customer Mobile App Navigation
+state "Customer App Navigation" as CustomerNav {
+    
+    state "Authentication" as Auth {
+        [*] --> Login
+        Login --> Register : "New User"
+        Register --> Login : "Registration Complete"
+        Login --> ForgotPassword : "Forgot Password"
+        ForgotPassword --> Login : "Password Reset"
+        Login --> Dashboard : "Successful Login"
+    }
+    
+    state "Main Dashboard" as Dashboard {
+        [*] --> Home
+        Home --> ServiceSelection : "Book Service"
+        Home --> BookingHistory : "View Bookings"
+        Home --> Profile : "Profile Menu"
+        
+        state "Service Selection" as ServiceSelection {
+            [*] --> ServiceCategories
+            ServiceCategories --> NursingServices : "Select Nursing"
+            ServiceCategories --> ChildCare : "Select Child Care"
+            ServiceCategories --> ElderlyCare : "Select Elderly Care"
+            ServiceCategories --> Physiotherapy : "Select Physiotherapy"
+            ServiceCategories --> AmbulanceService : "Select Ambulance"
+            
+            NursingServices --> BookingDetails : "Select Service"
+            ChildCare --> BookingDetails : "Select Service"
+            ElderlyCare --> BookingDetails : "Select Service"
+            Physiotherapy --> BookingDetails : "Select Service"
+            AmbulanceService --> AmbulanceBooking : "Book Ambulance"
+        }
+        
+        state "Booking Process" as BookingProcess {
+            BookingDetails --> ProviderSelection : "Next"
+            ProviderSelection --> TimeSlotSelection : "Select Provider"
+            TimeSlotSelection --> BookingConfirmation : "Select Time"
+            BookingConfirmation --> PaymentGateway : "Confirm Booking"
+            PaymentGateway --> BookingSuccess : "Payment Success"
+            BookingSuccess --> Home : "Done"
+            
+            AmbulanceBooking --> EmergencyDetails : "Enter Details"
+            EmergencyDetails --> AmbulanceConfirmation : "Book Now"
+            AmbulanceConfirmation --> BookingSuccess : "Confirmed"
+        }
+        
+        state "Booking Management" as BookingManagement {
+            BookingHistory --> BookingDetails : "View Booking"
+            BookingDetails --> RescheduleBooking : "Reschedule"
+            BookingDetails --> CancelBooking : "Cancel"
+            BookingDetails --> RateService : "Rate & Review"
+            
+            RescheduleBooking --> TimeSlotSelection : "Select New Time"
+            CancelBooking --> BookingHistory : "Cancelled"
+            RateService --> BookingHistory : "Review Submitted"
+        }
+        
+        state "User Profile" as Profile {
+            [*] --> ProfileView
+            ProfileView --> EditProfile : "Edit"
+            ProfileView --> BookingHistory : "Booking History"
+            ProfileView --> PaymentHistory : "Payment History"
+            ProfileView --> NotificationSettings : "Notifications"
+            ProfileView --> HelpSupport : "Help & Support"
+            ProfileView --> Logout : "Logout"
+            
+            EditProfile --> ProfileView : "Save"
+            BookingHistory --> BookingDetails : "View Booking"
+            Logout --> Login : "Logged Out"
+        }
+    }
+}
+
+' Provider Web Dashboard Navigation
+state "Provider Dashboard Navigation" as ProviderNav {
+    
+    state "Provider Authentication" as ProviderAuth {
+        [*] --> ProviderLogin
+        ProviderLogin --> ProviderDashboard : "Successful Login"
+        ProviderLogin --> ProviderForgotPassword : "Forgot Password"
+        ProviderForgotPassword --> ProviderLogin : "Password Reset"
+    }
+    
+    state "Provider Dashboard" as ProviderDashboard {
+        [*] --> DashboardOverview
+        DashboardOverview --> AssignedBookings : "View Bookings"
+        DashboardOverview --> Earnings : "View Earnings"
+        DashboardOverview --> ProviderProfile : "Profile"
+        
+        state "Booking Management" as AssignedBookings {
+            [*] --> BookingsList
+            BookingsList --> BookingDetails : "View Booking"
+            BookingsList --> FilterBookings : "Filter/Search"
+            BookingDetails --> UpdateStatus : "Update Status"
+            BookingDetails --> AddNotes : "Add Notes"
+            UpdateStatus --> BookingDetails : "Status Updated"
+            AddNotes --> BookingDetails : "Notes Added"
+        }
+        
+        state "Earnings Management" as Earnings {
+            [*] --> EarningsOverview
+            EarningsOverview --> EarningsHistory : "View History"
+            EarningsOverview --> PaymentDetails : "Payment Details"
+            EarningsHistory --> PaymentDetails : "View Payment"
+        }
+        
+        state "Provider Profile" as ProviderProfile {
+            [*] --> ProfileView
+            ProfileView --> EditProfile : "Edit Details"
+            ProfileView --> AvailabilitySettings : "Set Availability"
+            ProfileView --> DocumentManagement : "Manage Documents"
+            ProfileView --> ChangePassword : "Change Password"
+            ProfileView --> Logout : "Logout"
+            
+            EditProfile --> ProfileView : "Save"
+            AvailabilitySettings --> ProfileView : "Save"
+            DocumentManagement --> ProfileView : "Upload Complete"
+            ChangePassword --> ProfileView : "Password Changed"
+            Logout --> ProviderLogin : "Logged Out"
+        }
+    }
+}
+
+' Admin Web Dashboard Navigation
+state "Admin Dashboard Navigation" as AdminNav {
+    
+    state "Admin Authentication" as AdminAuth {
+        [*] --> AdminLogin
+        AdminLogin --> AdminDashboard : "Successful Login"
+        AdminLogin --> AdminForgotPassword : "Forgot Password"
+        AdminForgotPassword --> AdminLogin : "Password Reset"
+    }
+    
+    state "Admin Dashboard" as AdminDashboard {
+        [*] --> DashboardOverview
+        DashboardOverview --> BookingsManagement : "Manage Bookings"
+        DashboardOverview --> ProvidersManagement : "Manage Providers"
+        DashboardOverview --> UsersManagement : "Manage Users"
+        DashboardOverview --> ServicesManagement : "Manage Services"
+        DashboardOverview --> BasicAnalytics : "View Analytics"
+        DashboardOverview --> Settings : "Settings"
+        
+        state "Bookings Management" as BookingsManagement {
+            [*] --> BookingsList
+            BookingsList --> BookingDetails : "View Booking"
+            BookingsList --> FilterBookings : "Filter/Search"
+            BookingDetails --> AssignProvider : "Assign Provider"
+            BookingDetails --> UpdateStatus : "Update Status"
+            BookingDetails --> ContactCustomer : "Contact Customer"
+            AssignProvider --> BookingDetails : "Provider Assigned"
+            UpdateStatus --> BookingDetails : "Status Updated"
+        }
+        
+        state "Providers Management" as ProvidersManagement {
+            [*] --> ProvidersList
+            ProvidersList --> ProviderDetails : "View Provider"
+            ProvidersList --> AddProvider : "Add New Provider"
+            ProviderDetails --> EditProvider : "Edit Details"
+            ProviderDetails --> ProviderSchedule : "Manage Schedule"
+            ProviderDetails --> ProviderPerformance : "View Performance"
+            AddProvider --> ProvidersList : "Provider Added"
+            EditProvider --> ProviderDetails : "Changes Saved"
+        }
+        
+        state "Users Management" as UsersManagement {
+            [*] --> UsersList
+            UsersList --> UserDetails : "View User"
+            UsersList --> FilterUsers : "Filter/Search"
+            UserDetails --> EditUser : "Edit User"
+            UserDetails --> UserBookings : "View Bookings"
+            EditUser --> UserDetails : "Changes Saved"
+        }
+        
+        state "Services Management" as ServicesManagement {
+            [*] --> ServicesList
+            ServicesList --> ServiceDetails : "View Service"
+            ServicesList --> AddService : "Add New Service"
+            ServiceDetails --> EditService : "Edit Service"
+            ServiceDetails --> ServicePricing : "Manage Pricing"
+            AddService --> ServicesList : "Service Added"
+            EditService --> ServiceDetails : "Changes Saved"
+        }
+        
+        state "Basic Analytics" as BasicAnalytics {
+            [*] --> RevenueReports
+            RevenueReports --> BookingAnalytics : "Booking Trends"
+            RevenueReports --> ProviderAnalytics : "Provider Performance"
+            RevenueReports --> CustomerAnalytics : "Customer Insights"
+            RevenueReports --> ExportReports : "Export Data"
+        }
+    }
+}
+
+' Navigation between main sections
+Auth --> Dashboard : "Login Success"
+Dashboard --> Auth : "Logout"
+ProviderAuth --> ProviderDashboard : "Provider Login Success"
+ProviderDashboard --> ProviderAuth : "Provider Logout"
+AdminAuth --> AdminDashboard : "Admin Login Success"
+AdminDashboard --> AdminAuth : "Admin Logout"
+
+' Back navigation paths
+ServiceSelection --> Home : "Back to Home"
+BookingProcess --> ServiceSelection : "Back to Services"
+BookingManagement --> Home : "Back to Home"
+Profile --> Home : "Back to Home"
+
+AssignedBookings --> DashboardOverview : "Back to Dashboard"
+Earnings --> DashboardOverview : "Back to Dashboard"
+ProviderProfile --> DashboardOverview : "Back to Dashboard"
+
+BookingsManagement --> DashboardOverview : "Back to Dashboard"
+ProvidersManagement --> DashboardOverview : "Back to Dashboard"
+UsersManagement --> DashboardOverview : "Back to Dashboard"
+ServicesManagement --> DashboardOverview : "Back to Dashboard"
+BasicAnalytics --> DashboardOverview : "Back to Dashboard"
+
+@enduml
