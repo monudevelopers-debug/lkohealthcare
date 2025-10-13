@@ -42,13 +42,6 @@ public interface ProviderRepository extends JpaRepository<Provider, UUID> {
     List<Provider> findByAvailabilityStatus(AvailabilityStatus availabilityStatus);
     
     /**
-     * Find available providers
-     * 
-     * @return List of available providers
-     */
-    List<Provider> findByAvailabilityStatus(AvailabilityStatus.AVAILABLE);
-    
-    /**
      * Find providers by verification status
      * 
      * @param isVerified the verification status to filter by
