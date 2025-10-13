@@ -1,5 +1,7 @@
 package com.lucknow.healthcare.entity;
 
+import com.lucknow.healthcare.enums.UserRole;
+import com.lucknow.healthcare.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
