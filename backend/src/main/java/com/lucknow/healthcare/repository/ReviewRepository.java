@@ -4,6 +4,8 @@ import com.lucknow.healthcare.entity.Booking;
 import com.lucknow.healthcare.entity.Provider;
 import com.lucknow.healthcare.entity.Review;
 import com.lucknow.healthcare.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -293,4 +295,23 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
      */
     @Query("SELECT COUNT(r) > 0 FROM Review r WHERE r.user.id = :userId AND r.provider.id = :providerId")
     boolean existsByUserIdAndProviderId(@Param("userId") UUID userId, @Param("providerId") UUID providerId);
+    
+    // Pageable methods
+    Page<Review> findByUserId(UUID userId, Pageable pageable);
+    Page<Review> findByProviderId(UUID providerId, Pageable pageable);
+    Page<Review> findByRating(Integer rating, Pageable pageable);
+    Page<Review> findByRatingBetween(Integer minRating, Integer maxRating, Pageable pageable);
+    
+    // Additional query methods
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.provider.id = :providerId")
+    Double calculateAverageRatingByProvider(@Param("providerId") UUID providerId);
+    
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.user.id = :userId")
+    Double calculateAverageRatingByUser(@Param("userId") UUID userId);
+    
+    @Query("SELECT r FROM Review r ORDER BY r.rating DESC")
+    List<Review> findTopRatedProviders(@Param("limit") int limit);
+    
+    @Query("SELECT r FROM Review r ORDER BY r.createdAt DESC")
+    List<Review> findRecentReviews(@Param("limit") int limit);
 }

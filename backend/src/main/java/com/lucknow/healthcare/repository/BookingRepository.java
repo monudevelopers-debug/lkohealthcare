@@ -6,6 +6,8 @@ import com.lucknow.healthcare.entity.Service;
 import com.lucknow.healthcare.entity.User;
 import com.lucknow.healthcare.enums.BookingStatus;
 import com.lucknow.healthcare.enums.PaymentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,7 +16,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -242,4 +243,11 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
      */
     @Query("SELECT b FROM Booking b WHERE b.provider IS NULL AND b.status = 'PENDING'")
     List<Booking> findBookingsNeedingProviderAssignment();
+    
+    // Pageable methods
+    Page<Booking> findByUser(User user, Pageable pageable);
+    Page<Booking> findByUserId(UUID userId, Pageable pageable);
+    Page<Booking> findByProvider(Provider provider, Pageable pageable);
+    Page<Booking> findByProviderId(UUID providerId, Pageable pageable);
+    Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
 }

@@ -2,6 +2,8 @@ package com.lucknow.healthcare.repository;
 
 import com.lucknow.healthcare.entity.Service;
 import com.lucknow.healthcare.entity.ServiceCategory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,7 +11,6 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -161,4 +162,11 @@ public interface ServiceRepository extends JpaRepository<Service, UUID> {
      * @return number of services with the specified status
      */
     long countByIsActive(Boolean isActive);
+    
+    // Pageable methods
+    Page<Service> findByIsActiveTrue(Pageable pageable);
+    Page<Service> findByCategory(ServiceCategory category, Pageable pageable);
+    Page<Service> findByCategoryId(UUID categoryId, Pageable pageable);
+    Page<Service> findByCategoryAndIsActiveTrue(ServiceCategory category, Pageable pageable);
+    Page<Service> findByCategoryIdAndIsActiveTrue(UUID categoryId, Pageable pageable);
 }

@@ -1,6 +1,8 @@
 package com.lucknow.healthcare.repository;
 
 import com.lucknow.healthcare.entity.ServiceCategory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -85,4 +87,8 @@ public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory
      * @return number of service categories with the specified status
      */
     long countByIsActive(Boolean isActive);
+    
+    // Pageable methods
+    Page<ServiceCategory> findByIsActiveTrue(Pageable pageable);
+    Page<ServiceCategory> findByIsActive(Boolean isActive, Pageable pageable);
 }

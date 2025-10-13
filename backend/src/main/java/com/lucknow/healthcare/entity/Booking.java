@@ -88,6 +88,10 @@ public class Booking {
     @Column(length = 1000)
     private String specialInstructions;
     
+    @Size(max = 1000, message = "Notes must not exceed 1000 characters")
+    @Column(length = 1000)
+    private String notes;
+    
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -233,5 +237,13 @@ public class Booking {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public String getNotes() {
+        return notes;
+    }
+    
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }

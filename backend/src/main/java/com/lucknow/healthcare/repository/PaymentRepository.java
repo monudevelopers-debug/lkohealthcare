@@ -4,6 +4,8 @@ import com.lucknow.healthcare.entity.Booking;
 import com.lucknow.healthcare.entity.Payment;
 import com.lucknow.healthcare.enums.PaymentMethod;
 import com.lucknow.healthcare.enums.PaymentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -243,4 +245,15 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
      * @return true if transaction ID exists, false otherwise
      */
     boolean existsByTransactionId(String transactionId);
+    
+    // Pageable methods
+    Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
+    Page<Payment> findByMethod(PaymentMethod method, Pageable pageable);
+    
+    // Additional query methods
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = :status")
+    BigDecimal calculateTotalAmountByStatus(@Param("status") PaymentStatus status);
+    
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.method = :method")
+    BigDecimal calculateTotalAmountByMethod(@Param("method") PaymentMethod method);
 }

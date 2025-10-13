@@ -2,6 +2,8 @@ package com.lucknow.healthcare.repository;
 
 import com.lucknow.healthcare.entity.Provider;
 import com.lucknow.healthcare.enums.AvailabilityStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -165,4 +167,9 @@ public interface ProviderRepository extends JpaRepository<Provider, UUID> {
      */
     @Query("SELECT COUNT(p) FROM Provider p WHERE p.availabilityStatus = 'AVAILABLE' AND p.isVerified = true")
     long countAvailableAndVerifiedProviders();
+    
+    // Pageable methods
+    Page<Provider> findByAvailabilityStatus(AvailabilityStatus availabilityStatus, Pageable pageable);
+    Page<Provider> findByIsVerified(Boolean isVerified, Pageable pageable);
+    Page<Provider> findAvailableAndVerifiedProviders(Pageable pageable);
 }

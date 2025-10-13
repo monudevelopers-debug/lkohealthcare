@@ -3,6 +3,8 @@ package com.lucknow.healthcare.repository;
 import com.lucknow.healthcare.entity.User;
 import com.lucknow.healthcare.enums.UserRole;
 import com.lucknow.healthcare.enums.UserStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -115,4 +117,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return number of users with the specified status
      */
     long countByStatus(UserStatus status);
+    
+    // Pageable methods
+    Page<User> findByStatus(UserStatus status, Pageable pageable);
+    Page<User> findByRole(UserRole role, Pageable pageable);
+    
+    // Additional query methods
+    Optional<User> findByEmailVerificationToken(String token);
+    Optional<User> findByPasswordResetToken(String token);
 }

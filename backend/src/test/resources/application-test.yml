@@ -1,0 +1,66 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: lucknow-healthcare-services-test
+  
+  profiles:
+    active: test
+  
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 300000
+      connection-timeout: 20000
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        use_sql_comments: true
+    open-in-view: false
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  flyway:
+    enabled: false
+
+# JWT Configuration
+jwt:
+  secret: test-secret-key
+  expiration: 900000
+  refresh-expiration: 604800000
+
+# Application Configuration
+app:
+  name: Lucknow Nursing Healthcare Services Test
+  version: 1.0.0
+  environment: test
+  url: http://localhost:8080
+
+# Security Configuration
+security:
+  bcrypt-rounds: 4
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:3001,http://localhost:3002
+
+# Logging Configuration
+logging:
+  level:
+    com.lucknow.healthcare: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
