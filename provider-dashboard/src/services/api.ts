@@ -111,7 +111,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api',
+      baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -135,7 +135,8 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          localStorage.removeItem('authToken');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
           window.location.href = '/login';
         }
         return Promise.reject(error);
@@ -151,7 +152,8 @@ class ApiClient {
 
   async logout(): Promise<void> {
     await this.client.post('/auth/logout');
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   }
 
   async getCurrentUser(): Promise<User> {
@@ -283,31 +285,29 @@ class ApiClient {
 // Create and export API client instance
 const apiClient = new ApiClient();
 
-// Export individual functions for easier use
-export const {
-  login,
-  logout,
-  getCurrentUser,
-  getProviderProfile,
-  updateProviderProfile,
-  updateAvailability,
-  getMyBookings,
-  getBookingById,
-  updateBookingStatus,
-  acceptBooking,
-  rejectBooking,
-  startService,
-  completeService,
-  getProviderStats,
-  getRecentBookings,
-  getEarnings,
-  getPaymentHistory,
-  getMyReviews,
-  getReviewById,
-  getAvailableServices,
-  getServiceCategories,
-  getSchedule,
-  updateSchedule,
-} = apiClient;
+// Export individual functions as arrow functions to maintain 'this' context
+export const login = (credentials: LoginRequest) => apiClient.login(credentials);
+export const logout = () => apiClient.logout();
+export const getCurrentUser = () => apiClient.getCurrentUser();
+export const getProviderProfile = () => apiClient.getProviderProfile();
+export const updateProviderProfile = (profile: Partial<Provider>) => apiClient.updateProviderProfile(profile);
+export const updateAvailability = (isAvailable: boolean) => apiClient.updateAvailability(isAvailable);
+export const getMyBookings = (page = 0, size = 20, status?: Booking['status']) => apiClient.getMyBookings(page, size, status);
+export const getBookingById = (id: string) => apiClient.getBookingById(id);
+export const updateBookingStatus = (id: string, status: Booking['status']) => apiClient.updateBookingStatus(id, status);
+export const acceptBooking = (id: string) => apiClient.acceptBooking(id);
+export const rejectBooking = (id: string, reason?: string) => apiClient.rejectBooking(id, reason);
+export const startService = (id: string) => apiClient.startService(id);
+export const completeService = (id: string, notes?: string) => apiClient.completeService(id, notes);
+export const getProviderStats = (period: 'today' | 'week' | 'month') => apiClient.getProviderStats(period);
+export const getRecentBookings = (limit = 10) => apiClient.getRecentBookings(limit);
+export const getEarnings = (period: 'today' | 'week' | 'month' | 'year') => apiClient.getEarnings(period);
+export const getPaymentHistory = (page = 0, size = 20) => apiClient.getPaymentHistory(page, size);
+export const getMyReviews = (page = 0, size = 20) => apiClient.getMyReviews(page, size);
+export const getReviewById = (id: string) => apiClient.getReviewById(id);
+export const getAvailableServices = () => apiClient.getAvailableServices();
+export const getServiceCategories = () => apiClient.getServiceCategories();
+export const getSchedule = (date: string) => apiClient.getSchedule(date);
+export const updateSchedule = (bookings: { id: string; scheduledTime: string }[]) => apiClient.updateSchedule(bookings);
 
 export default apiClient;

@@ -84,13 +84,13 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     @Transactional(readOnly = true)
     public List<Service> getAllServices() {
-        return serviceRepository.findAll();
+        return serviceRepository.findAllWithCategory();
     }
     
     @Override
     @Transactional(readOnly = true)
     public List<Service> getActiveServices() {
-        return serviceRepository.findByIsActiveTrue();
+        return serviceRepository.findActiveWithCategory();
     }
     
     @Override

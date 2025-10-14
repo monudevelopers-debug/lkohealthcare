@@ -1,8 +1,11 @@
-import React from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 const Layout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
 
   const nav = [
     { to: '/', label: 'Dashboard' },
@@ -12,6 +15,30 @@ const Layout: React.FC = () => {
     { to: '/services', label: 'Services' },
     { to: '/analytics', label: 'Analytics' },
   ];
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -34,6 +61,17 @@ const Layout: React.FC = () => {
                 </Link>
               ))}
             </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-700">
+              {user?.email}
+            </div>
+            <button
+              onClick={logout}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>

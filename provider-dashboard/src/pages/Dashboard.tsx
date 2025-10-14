@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { 
   Calendar, 
   Clock, 
   DollarSign, 
   Users, 
-  TrendingUp,
   Star,
   AlertCircle
 } from 'lucide-react';
@@ -31,7 +30,7 @@ const Dashboard: React.FC = () => {
   // Fetch recent bookings
   const { data: recentBookings, isLoading: bookingsLoading } = useQuery(
     'recent-bookings',
-    getRecentBookings,
+    () => getRecentBookings(10),
     {
       refetchInterval: 10000, // Refetch every 10 seconds
     }

@@ -383,4 +383,63 @@ public interface BookingService {
      * @throws IllegalArgumentException if booking not found
      */
     boolean deleteBooking(UUID id);
+    
+    /**
+     * Count all bookings
+     * 
+     * @return the total number of bookings
+     */
+    long countAllBookings();
+    
+    /**
+     * Count active bookings
+     * 
+     * @return the number of active bookings
+     */
+    long countActiveBookings();
+    
+    /**
+     * Calculate total revenue
+     * 
+     * @return the total revenue from all bookings
+     */
+    double calculateTotalRevenue();
+    
+    /**
+     * Accept a booking (provider accepts the booking request)
+     * 
+     * @param id the booking ID
+     * @return the updated booking with CONFIRMED status
+     * @throws IllegalArgumentException if booking not found or not in PENDING status
+     */
+    Booking acceptBooking(UUID id);
+    
+    /**
+     * Reject a booking (provider rejects the booking request)
+     * 
+     * @param id the booking ID
+     * @param reason optional reason for rejection
+     * @return the updated booking with CANCELLED status
+     * @throws IllegalArgumentException if booking not found or not in PENDING status
+     */
+    Booking rejectBooking(UUID id, String reason);
+    
+    /**
+     * Start service delivery (provider marks service as started)
+     * 
+     * @param id the booking ID
+     * @return the updated booking with IN_PROGRESS status
+     * @throws IllegalArgumentException if booking not found or not in CONFIRMED status
+     */
+    Booking startService(UUID id);
+    
+    /**
+     * Complete service delivery (provider marks service as completed)
+     * 
+     * @param id the booking ID
+     * @param notes optional service completion notes
+     * @return the updated booking with COMPLETED status
+     * @throws IllegalArgumentException if booking not found or not in IN_PROGRESS status
+     */
+    Booking completeService(UUID id, String notes);
 }

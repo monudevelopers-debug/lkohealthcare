@@ -335,4 +335,10 @@ public class UserServiceImpl implements UserService {
     public List<User> findByStatus(UserStatus status) {
         return userRepository.findByStatus(status);
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public long countAllUsers() {
+        return userRepository.count();
+    }
 }

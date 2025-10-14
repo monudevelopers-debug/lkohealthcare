@@ -23,7 +23,7 @@ import java.util.UUID;
  * @version 1.0.0
  */
 @RestController
-@RequestMapping("/api/service-categories")
+@RequestMapping("/service-categories")
 @CrossOrigin(origins = "*")
 public class ServiceCategoryController {
     

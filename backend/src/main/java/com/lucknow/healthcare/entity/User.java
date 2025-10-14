@@ -1,5 +1,6 @@
 package com.lucknow.healthcare.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.lucknow.healthcare.enums.UserRole;
 import com.lucknow.healthcare.enums.UserStatus;
 import jakarta.persistence.*;
@@ -49,6 +50,7 @@ public class User {
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
     @Column(nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     
     @Enumerated(EnumType.STRING)
@@ -70,11 +72,14 @@ public class User {
     private Boolean emailVerified = false;
     
     @Column(length = 255)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String emailVerificationToken;
     
     @Column(length = 255)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String passwordResetToken;
     
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private LocalDateTime passwordResetExpires;
     
     @CreatedDate

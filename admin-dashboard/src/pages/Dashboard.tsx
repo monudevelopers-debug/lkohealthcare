@@ -7,8 +7,7 @@ import {
   TrendingUp,
   Activity,
   AlertCircle,
-  CheckCircle,
-  Clock
+  CheckCircle
 } from 'lucide-react';
 
 import { getAdminStats, getSystemHealth } from '../services/api';
@@ -132,14 +131,14 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* System Health Alert */}
-      {systemHealth && !systemHealth.isHealthy && (
+      {systemHealth && systemHealth.overall !== 'healthy' && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
             <AlertCircle className="w-5 h-5 text-red-600 mr-3" />
             <div>
               <h3 className="text-sm font-medium text-red-800">System Health Alert</h3>
               <p className="text-sm text-red-700 mt-1">
-                {systemHealth.issues.join(', ')}
+                System components are not healthy
               </p>
             </div>
           </div>
@@ -174,7 +173,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <Chart
-            data={stats?.revenueData || []}
+            data={[]}
             type="line"
             height={200}
           />
@@ -190,7 +189,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <Chart
-            data={stats?.bookingsData || []}
+            data={[]}
             type="bar"
             height={200}
           />
@@ -235,39 +234,10 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="p-6">
           <div className="space-y-4">
-            {stats?.alerts?.map((alert, index) => (
-              <div key={index} className={`flex items-start p-4 rounded-lg ${
-                alert.type === 'error' ? 'bg-red-50' : 
-                alert.type === 'warning' ? 'bg-yellow-50' : 'bg-blue-50'
-              }`}>
-                <div className={`w-5 h-5 mt-0.5 mr-3 ${
-                  alert.type === 'error' ? 'text-red-600' : 
-                  alert.type === 'warning' ? 'text-yellow-600' : 'text-blue-600'
-                }`}>
-                  {alert.type === 'error' ? <AlertCircle /> : 
-                   alert.type === 'warning' ? <Clock /> : <CheckCircle />}
-                </div>
-                <div>
-                  <p className={`font-medium ${
-                    alert.type === 'error' ? 'text-red-800' : 
-                    alert.type === 'warning' ? 'text-yellow-800' : 'text-blue-800'
-                  }`}>
-                    {alert.title}
-                  </p>
-                  <p className={`text-sm mt-1 ${
-                    alert.type === 'error' ? 'text-red-700' : 
-                    alert.type === 'warning' ? 'text-yellow-700' : 'text-blue-700'
-                  }`}>
-                    {alert.message}
-                  </p>
-                </div>
-              </div>
-            )) || (
-              <div className="text-center py-8">
-                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                <p className="text-gray-500">No alerts at this time</p>
-              </div>
-            )}
+            <div className="text-center py-8">
+              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+              <p className="text-gray-500">No alerts at this time</p>
+            </div>
           </div>
         </div>
       </div>

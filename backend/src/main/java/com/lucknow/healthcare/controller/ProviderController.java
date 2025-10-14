@@ -1,18 +1,30 @@
 package com.lucknow.healthcare.controller;
 
+import com.lucknow.healthcare.entity.Booking;
 import com.lucknow.healthcare.entity.Provider;
+import com.lucknow.healthcare.entity.Review;
+import com.lucknow.healthcare.entity.User;
 import com.lucknow.healthcare.enums.AvailabilityStatus;
+import com.lucknow.healthcare.service.interfaces.BookingService;
 import com.lucknow.healthcare.service.interfaces.ProviderService;
+import com.lucknow.healthcare.service.interfaces.ReviewService;
+import com.lucknow.healthcare.service.interfaces.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,12 +38,21 @@ import java.util.UUID;
  * @version 1.0.0
  */
 @RestController
-@RequestMapping("/api/providers")
+@RequestMapping("/providers")
 @CrossOrigin(origins = "*")
 public class ProviderController {
     
     @Autowired
     private ProviderService providerService;
+    
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private BookingService bookingService;
+    
+    @Autowired
+    private ReviewService reviewService;
     
     /**
      * Create a new provider
@@ -398,6 +419,367 @@ public class ProviderController {
             return success ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // ============ Provider Dashboard Specific Endpoints ============
+    
+    /**
+     * Get current provider's profile
+     * 
+     * @return ResponseEntity containing the provider profile
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<Map<String, Object>> getProviderProfile() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "User not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Provider profile not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("provider", providerOpt.get());
+            response.put("user", userOpt.get());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Update current provider's profile
+     * 
+     * @param provider the updated provider information
+     * @return ResponseEntity containing the updated provider
+     */
+    @PutMapping("/profile")
+    public ResponseEntity<Provider> updateProviderProfile(@RequestBody Provider provider) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider existingProvider = providerOpt.get();
+            provider.setId(existingProvider.getId());
+            Provider updatedProvider = providerService.updateProvider(provider);
+            return ResponseEntity.ok(updatedProvider);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Update current provider's availability
+     * 
+     * @param request containing isAvailable boolean
+     * @return ResponseEntity containing the updated provider
+     */
+    @PatchMapping("/availability")
+    public ResponseEntity<Provider> updateAvailability(@RequestBody Map<String, Object> request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            Boolean isAvailable = (Boolean) request.get("isAvailable");
+            AvailabilityStatus status = isAvailable ? AvailabilityStatus.AVAILABLE : AvailabilityStatus.OFF_DUTY;
+            
+            Provider updatedProvider = providerService.updateProviderAvailability(provider.getId(), status);
+            return ResponseEntity.ok(updatedProvider);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Get current provider's bookings
+     * 
+     * @param page page number
+     * @param size page size
+     * @param status optional booking status filter
+     * @return ResponseEntity containing paginated bookings
+     */
+    @GetMapping("/bookings")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<Page<Booking>> getProviderBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Booking> bookings = bookingService.getBookingsByProvider(provider, pageable);
+            
+            return ResponseEntity.ok(bookings);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get current provider's statistics
+     * 
+     * @param period time period (today, week, month)
+     * @return ResponseEntity containing provider statistics
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getProviderStats(
+            @RequestParam(defaultValue = "month") String period) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            Map<String, Object> stats = new HashMap<>();
+            
+            // Mock statistics for now - can be replaced with real calculations
+            stats.put("todayBookings", 5);
+            stats.put("activeBookings", 3);
+            stats.put("totalEarnings", 15000.0);
+            stats.put("rating", provider.getRating());
+            stats.put("todayBookingsChange", 20.0);
+            stats.put("activeBookingsChange", 10.0);
+            stats.put("earningsChange", 15.0);
+            stats.put("ratingChange", 0.5);
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get current provider's reviews
+     * 
+     * @param page page number
+     * @param size page size
+     * @return ResponseEntity containing paginated reviews
+     */
+    @GetMapping("/reviews")
+    public ResponseEntity<Map<String, Object>> getProviderReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Review> reviews = reviewService.getReviewsByProvider(provider.getId(), pageable);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", reviews.getContent());
+            response.put("totalElements", reviews.getTotalElements());
+            response.put("totalPages", reviews.getTotalPages());
+            response.put("number", reviews.getNumber());
+            response.put("size", reviews.getSize());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get current provider's schedule for a specific date
+     * 
+     * @param date the date to get schedule for (format: yyyy-MM-dd)
+     * @return ResponseEntity containing bookings for the date
+     */
+    @GetMapping("/schedule")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<List<Booking>> getProviderSchedule(
+            @RequestParam String date) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            LocalDate scheduleDate = LocalDate.parse(date);
+            // Get all bookings for the provider and filter by date
+            List<Booking> allBookings = bookingService.getBookingsByProvider(provider);
+            List<Booking> bookings = allBookings.stream()
+                .filter(b -> b.getScheduledDate() != null && b.getScheduledDate().equals(scheduleDate))
+                .toList();
+            
+            return ResponseEntity.ok(bookings);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+    
+    /**
+     * Get recent bookings for current provider
+     * 
+     * @param limit number of recent bookings to return
+     * @return ResponseEntity containing recent bookings
+     */
+    @GetMapping("/recent-bookings")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<List<Booking>> getRecentBookings(
+            @RequestParam(defaultValue = "10") int limit) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            List<Booking> allBookings = bookingService.getBookingsByProvider(provider);
+            
+            // Sort by created date descending and limit
+            List<Booking> recentBookings = allBookings.stream()
+                .sorted((b1, b2) -> b2.getCreatedAt().compareTo(b1.getCreatedAt()))
+                .limit(limit)
+                .toList();
+            
+            return ResponseEntity.ok(recentBookings);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get earnings data for current provider
+     * 
+     * @param period time period (today, week, month, year)
+     * @return ResponseEntity containing earnings data
+     */
+    @GetMapping("/earnings")
+    public ResponseEntity<Map<String, Object>> getEarnings(
+            @RequestParam(defaultValue = "month") String period) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            List<Booking> bookings = bookingService.getBookingsByProvider(provider);
+            
+            // Filter completed bookings for the period
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime startDate = switch (period.toLowerCase()) {
+                case "today" -> now.toLocalDate().atStartOfDay();
+                case "week" -> now.minusWeeks(1);
+                case "year" -> now.minusYears(1);
+                default -> now.minusMonths(1); // month
+            };
+            
+            List<Booking> periodBookings = bookings.stream()
+                .filter(b -> b.getStatus() == com.lucknow.healthcare.enums.BookingStatus.COMPLETED)
+                .filter(b -> b.getUpdatedAt().isAfter(startDate))
+                .toList();
+            
+            double total = periodBookings.stream()
+                .mapToDouble(b -> b.getTotalAmount() != null ? b.getTotalAmount().doubleValue() : 0.0)
+                .sum();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("total", total);
+            response.put("breakdown", periodBookings);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get payment history for current provider
+     * 
+     * @param page page number
+     * @param size page size
+     * @return ResponseEntity containing paginated payment history
+     */
+    @GetMapping("/payments")
+    public ResponseEntity<Map<String, Object>> getPaymentHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            
+            // Get all completed bookings for the provider (simulating payments)
+            List<Booking> allBookings = bookingService.getBookingsByProvider(provider).stream()
+                .filter(b -> b.getStatus() == com.lucknow.healthcare.enums.BookingStatus.COMPLETED)
+                .sorted((b1, b2) -> b2.getUpdatedAt().compareTo(b1.getUpdatedAt()))
+                .toList();
+            
+            int start = page * size;
+            int end = Math.min(start + size, allBookings.size());
+            List<Booking> pageBookings = start < allBookings.size() ? 
+                allBookings.subList(start, end) : List.of();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", pageBookings);
+            response.put("totalElements", allBookings.size());
+            response.put("totalPages", (int) Math.ceil((double) allBookings.size() / size));
+            response.put("number", page);
+            response.put("size", size);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

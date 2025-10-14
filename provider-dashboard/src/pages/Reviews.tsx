@@ -16,7 +16,7 @@ import {
   TrendingDown
 } from 'lucide-react';
 
-import { getProviderReviews, getReviewStats } from '../services/api';
+import { getMyReviews } from '../services/api';
 import { Review } from '../types/review';
 
 const Reviews: React.FC = () => {
@@ -29,19 +29,22 @@ const Reviews: React.FC = () => {
   // Fetch provider reviews
   const { data: reviewsData, isLoading } = useQuery(
     ['provider-reviews', ratingFilter, sortBy],
-    () => getProviderReviews(0, 50, ratingFilter === 'ALL' ? undefined : parseInt(ratingFilter), sortBy),
+    () => getMyReviews(0, 50),
     {
       refetchInterval: 60000, // Refetch every minute
     }
   );
 
-  // Fetch review statistics
-  const { data: reviewStats } = useQuery(
-    'review-stats',
-    getReviewStats,
-  );
-
   const reviews = reviewsData?.content || [];
+  
+  // Review statistics - calculated from reviews data
+  const reviewStats = {
+    rating1Count: reviews.filter(r => r.rating === 1).length,
+    rating2Count: reviews.filter(r => r.rating === 2).length,
+    rating3Count: reviews.filter(r => r.rating === 3).length,
+    rating4Count: reviews.filter(r => r.rating === 4).length,
+    rating5Count: reviews.filter(r => r.rating === 5).length,
+  };
   const filteredReviews = reviews.filter(review =>
     review.comment.toLowerCase().includes(searchTerm.toLowerCase()) ||
     review.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

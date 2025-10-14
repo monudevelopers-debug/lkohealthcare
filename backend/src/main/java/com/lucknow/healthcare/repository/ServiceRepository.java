@@ -26,6 +26,22 @@ import java.util.UUID;
 public interface ServiceRepository extends JpaRepository<Service, UUID> {
     
     /**
+     * Find all services with category eagerly loaded
+     * 
+     * @return List of services with category loaded
+     */
+    @Query("SELECT s FROM Service s LEFT JOIN FETCH s.category")
+    List<Service> findAllWithCategory();
+    
+    /**
+     * Find active services with category eagerly loaded
+     * 
+     * @return List of active services with category loaded
+     */
+    @Query("SELECT s FROM Service s LEFT JOIN FETCH s.category WHERE s.isActive = true")
+    List<Service> findActiveWithCategory();
+    
+    /**
      * Find services by category
      * 
      * @param category the service category to filter by

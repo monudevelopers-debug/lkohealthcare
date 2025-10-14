@@ -94,6 +94,13 @@ public interface ProviderService {
     List<Provider> getAllProviders();
     
     /**
+     * Count all providers
+     * 
+     * @return the total number of providers
+     */
+    long countAllProviders();
+    
+    /**
      * Get providers by availability status
      * 
      * @param availabilityStatus the availability status

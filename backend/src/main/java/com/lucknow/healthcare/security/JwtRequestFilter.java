@@ -1,17 +1,12 @@
 package com.lucknow.healthcare.security;
 
 import com.lucknow.healthcare.service.interfaces.UserService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,10 +14,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.util.Date;
-import java.util.function.Function;
 
 /**
  * JWT Request Filter
@@ -38,15 +30,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Autowired
     private UserService userService;
     
-    @Value("${jwt.secret:mySecretKey}")
-    private String secret;
-    
-    @Value("${jwt.expiration:86400000}")
-    private Long expiration;
-    
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
-    }
+    @Autowired
+    private JwtUtil jwtUtil;
     
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
@@ -59,65 +44,35 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
             jwtToken = requestTokenHeader.substring(7);
+            logger.info("JWT Token found: " + jwtToken.substring(0, Math.min(20, jwtToken.length())) + "...");
             try {
-                username = getUsernameFromToken(jwtToken);
+                username = jwtUtil.getUsernameFromToken(jwtToken);
+                logger.info("Username extracted from token: " + username);
             } catch (Exception e) {
-                logger.error("Unable to get JWT Token or JWT Token has expired");
+                logger.error("Unable to get JWT Token or JWT Token has expired: " + e.getMessage());
             }
         } else {
-            logger.warn("JWT Token does not begin with Bearer String");
+            logger.warn("JWT Token does not begin with Bearer String. Header: " + requestTokenHeader);
         }
         
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            logger.info("Attempting to load user details for: " + username);
             UserDetails userDetails = this.userService.loadUserByUsername(username);
             
-            if (validateToken(jwtToken, userDetails)) {
+            if (jwtUtil.validateToken(jwtToken, userDetails)) {
+                logger.info("JWT Token validated successfully for user: " + username);
+                logger.info("User authorities: " + userDetails.getAuthorities());
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = 
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                logger.info("Authentication set in SecurityContext for user: " + username + " with authorities: " + userDetails.getAuthorities());
+            } else {
+                logger.warn("JWT Token validation failed for user: " + username);
             }
+        } else {
+            logger.warn("Username is null or authentication already exists. Username: " + username + ", Existing auth: " + (SecurityContextHolder.getContext().getAuthentication() != null));
         }
         chain.doFilter(request, response);
-    }
-    
-    public String getUsernameFromToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
-    }
-    
-    public Date getExpirationDateFromToken(String token) {
-        return getClaimFromToken(token, Claims::getExpiration);
-    }
-    
-    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = getAllClaimsFromToken(token);
-        return claimsResolver.apply(claims);
-    }
-    
-    private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
-    
-    private Boolean isTokenExpired(String token) {
-        final Date expiration = getExpirationDateFromToken(token);
-        return expiration.before(new Date());
-    }
-    
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = getUsernameFromToken(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-    
-    public String generateToken(String username) {
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
-                .compact();
     }
 }

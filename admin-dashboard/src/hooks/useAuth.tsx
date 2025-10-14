@@ -5,9 +5,10 @@ import api from '../services/api';
 interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   role: string;
+  phone?: string;
+  status?: string;
 }
 
 interface AuthContextType {
@@ -30,8 +31,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (token && storedUser && storedUser !== 'undefined') {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
     }
     setIsLoading(false);
   }, []);
@@ -41,18 +48,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await api.post('/auth/login', { email, password });
       const { token, user: userData } = response.data;
       
+      console.log('Login successful, token:', token.substring(0, 20) + '...');
+      console.log('User data:', userData);
+      
+      // Store token and user
       localStorage.setItem('token', token);
+      localStorage.setItem('authToken', token); // Backup storage
       localStorage.setItem('user', JSON.stringify(userData));
       
       setUser(userData);
-      navigate('/');
+      
+      // Small delay to ensure localStorage is written
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
     } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     setUser(null);
     navigate('/login');

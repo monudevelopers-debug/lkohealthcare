@@ -33,6 +33,7 @@ public class JwtUtil {
     private Long expiration;
     
     private SecretKey getSigningKey() {
+        // Always use the configured secret for consistency
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
     
@@ -97,5 +98,9 @@ public class JwtUtil {
         } catch (Exception e) {
             return false;
         }
+    }
+    
+    public Long getExpiration() {
+        return expiration;
     }
 }

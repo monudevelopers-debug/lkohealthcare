@@ -4,11 +4,15 @@ import com.lucknow.healthcare.entity.User;
 import com.lucknow.healthcare.enums.UserRole;
 import com.lucknow.healthcare.enums.UserStatus;
 import com.lucknow.healthcare.service.interfaces.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +32,8 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 public class UserController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
     
     @Autowired
     private UserService userService;
@@ -60,6 +66,30 @@ public class UserController {
         Optional<User> userOpt = userService.authenticateUser(email, password);
         return userOpt.map(user -> ResponseEntity.ok(user))
                      .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+    }
+    
+    /**
+     * Get all users with pagination
+     * 
+     * @param page page number (default 0)
+     * @param size page size (default 20)
+     * @return ResponseEntity containing paginated users
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'PROVIDER', 'CUSTOMER')")
+    public ResponseEntity<Page<User>> getUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            logger.info("GET /users called with page={}, size={}", page, size);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<User> users = userService.getAllUsers(pageable);
+            logger.info("Returning {} users", users.getContent().size());
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            logger.error("Error in getUsers: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     /**
@@ -234,18 +264,6 @@ public class UserController {
     @GetMapping("/search")
     public ResponseEntity<List<User>> searchUsersByName(@RequestParam String name) {
         List<User> users = userService.findUsersByName(name);
-        return ResponseEntity.ok(users);
-    }
-    
-    /**
-     * Get all users with pagination
-     * 
-     * @param pageable pagination information
-     * @return ResponseEntity containing the page of users
-     */
-    @GetMapping
-    public ResponseEntity<Page<User>> getAllUsers(Pageable pageable) {
-        Page<User> users = userService.getAllUsers(pageable);
         return ResponseEntity.ok(users);
     }
     

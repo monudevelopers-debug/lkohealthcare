@@ -249,4 +249,10 @@ public class ProviderServiceImpl implements ProviderService {
         providerRepository.save(provider);
         return true;
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public long countAllProviders() {
+        return providerRepository.count();
+    }
 }

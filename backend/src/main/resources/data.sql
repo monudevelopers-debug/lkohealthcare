@@ -17,20 +17,20 @@ ON CONFLICT (id) DO NOTHING;
 -- Insert sample users (Admin, Providers, Regular Users)
 INSERT INTO users (id, email, password, name, phone, role, status, email_verified, created_at, updated_at) VALUES
 -- Admin user
-('550e8400-e29b-41d4-a716-446655440101', 'admin@lucknowhealthcare.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Admin User', '+91-9876543210', 'ADMIN', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440101', 'admin@lucknowhealthcare.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Admin User', '+91-9876543210', 'ADMIN', 'ACTIVE', true, NOW(), NOW()),
 
 -- Provider users
-('550e8400-e29b-41d4-a716-446655440102', 'dr.sharma@lucknowhealthcare.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Dr. Rajesh Sharma', '+91-9876543211', 'PROVIDER', 'ACTIVE', true, NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440103', 'dr.patel@lucknowhealthcare.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Dr. Priya Patel', '+91-9876543212', 'PROVIDER', 'ACTIVE', true, NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440104', 'dr.singh@lucknowhealthcare.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Dr. Amit Singh', '+91-9876543213', 'PROVIDER', 'ACTIVE', true, NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440105', 'dr.gupta@lucknowhealthcare.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Dr. Sunita Gupta', '+91-9876543214', 'PROVIDER', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440102', 'dr.sharma@lucknowhealthcare.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Dr. Rajesh Sharma', '+91-9876543211', 'PROVIDER', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440103', 'dr.patel@lucknowhealthcare.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Dr. Priya Patel', '+91-9876543212', 'PROVIDER', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440104', 'dr.singh@lucknowhealthcare.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Dr. Amit Singh', '+91-9876543213', 'PROVIDER', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440105', 'dr.gupta@lucknowhealthcare.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Dr. Sunita Gupta', '+91-9876543214', 'PROVIDER', 'ACTIVE', true, NOW(), NOW()),
 
 -- Regular users
-('550e8400-e29b-41d4-a716-446655440106', 'user1@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Rahul Kumar', '+91-9876543215', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440107', 'user2@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Priya Sharma', '+91-9876543216', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440108', 'user3@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Amit Verma', '+91-9876543217', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440109', 'user4@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Sneha Agarwal', '+91-9876543218', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440110', 'user5@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'Vikram Yadav', '+91-9876543219', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW())
+('550e8400-e29b-41d4-a716-446655440106', 'user1@example.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Rahul Kumar', '+91-9876543215', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440107', 'user2@example.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Priya Sharma', '+91-9876543216', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440108', 'user3@example.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Amit Verma', '+91-9876543217', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440109', 'user4@example.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Sneha Agarwal', '+91-9876543218', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW()),
+('550e8400-e29b-41d4-a716-446655440110', 'user5@example.com', '$2a$10$WiO.0eFZgQw4OXuoLKAaheF/EbVED8ULOAmegrjqhoiYgHbFkZ3UO', 'Vikram Yadav', '+91-9876543219', 'CUSTOMER', 'ACTIVE', true, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert sample providers

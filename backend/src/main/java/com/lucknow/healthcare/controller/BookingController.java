@@ -31,7 +31,7 @@ import java.util.UUID;
  * @version 1.0.0
  */
 @RestController
-@RequestMapping("/api/bookings")
+@RequestMapping("/bookings")
 @CrossOrigin(origins = "*")
 public class BookingController {
     
@@ -55,6 +55,18 @@ public class BookingController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+    
+    /**
+     * Get all bookings with pagination
+     * 
+     * @param pageable pagination parameters
+     * @return ResponseEntity containing paginated bookings
+     */
+    @GetMapping
+    public ResponseEntity<Page<Booking>> getBookings(Pageable pageable) {
+        Page<Booking> bookings = bookingService.getAllBookings(pageable);
+        return ResponseEntity.ok(bookings);
     }
     
     /**
@@ -482,6 +494,74 @@ public class BookingController {
             return success ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Accept a booking (provider accepts the booking request)
+     * 
+     * @param id the booking ID
+     * @return ResponseEntity containing the updated booking
+     */
+    @PostMapping("/{id}/accept")
+    public ResponseEntity<Booking> acceptBooking(@PathVariable UUID id) {
+        try {
+            Booking acceptedBooking = bookingService.acceptBooking(id);
+            return ResponseEntity.ok(acceptedBooking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Reject a booking (provider rejects the booking request)
+     * 
+     * @param id the booking ID
+     * @param request optional rejection reason in request body
+     * @return ResponseEntity containing the updated booking
+     */
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<Booking> rejectBooking(@PathVariable UUID id, @RequestBody(required = false) java.util.Map<String, String> request) {
+        try {
+            String reason = request != null ? request.get("reason") : null;
+            Booking rejectedBooking = bookingService.rejectBooking(id, reason);
+            return ResponseEntity.ok(rejectedBooking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Start service delivery (provider marks service as started)
+     * 
+     * @param id the booking ID
+     * @return ResponseEntity containing the updated booking
+     */
+    @PostMapping("/{id}/start")
+    public ResponseEntity<Booking> startService(@PathVariable UUID id) {
+        try {
+            Booking startedBooking = bookingService.startService(id);
+            return ResponseEntity.ok(startedBooking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Complete service delivery (provider marks service as completed)
+     * 
+     * @param id the booking ID
+     * @param request optional completion notes in request body
+     * @return ResponseEntity containing the updated booking
+     */
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<Booking> completeService(@PathVariable UUID id, @RequestBody(required = false) java.util.Map<String, String> request) {
+        try {
+            String notes = request != null ? request.get("notes") : null;
+            Booking completedBooking = bookingService.completeService(id, notes);
+            return ResponseEntity.ok(completedBooking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }

@@ -36,6 +36,9 @@ public class SecurityConfig {
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     
     @Autowired
+    private JwtAccessDeniedHandler jwtAccessDeniedHandler;
+    
+    @Autowired
     private JwtRequestFilter jwtRequestFilter;
     
     @Bean
@@ -60,16 +63,19 @@ public class SecurityConfig {
                                "/providers/available-verified", "/providers/top-rated",
                                "/providers/available", "/providers/search", "/providers/search/qualification")
                 .permitAll()
-                .requestMatchers("/users/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/users/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/service-categories/**").hasAnyRole("ADMIN", "PROVIDER")
                 .requestMatchers("/services/**").hasAnyRole("ADMIN", "PROVIDER")
                 .requestMatchers("/providers/**").hasAnyRole("ADMIN", "PROVIDER")
-                .requestMatchers("/bookings/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
-                .requestMatchers("/payments/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
-                .requestMatchers("/reviews/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
+                .requestMatchers("/bookings/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
+                .requestMatchers("/payments/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
+                .requestMatchers("/reviews/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .anyRequest().authenticated()
             )
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler(jwtAccessDeniedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
@@ -81,7 +87,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         

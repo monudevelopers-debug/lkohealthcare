@@ -56,19 +56,24 @@ public class AuthController {
             
             Optional<User> userOpt = userService.findByEmail(loginRequest.getEmail());
             if (userOpt.isEmpty()) {
-                return ResponseEntity.badRequest().build();
+                Map<String, Object> response = new HashMap<>();
+                response.put("error", "User not found");
+                response.put("message", "Login failed");
+                return ResponseEntity.badRequest().body(response);
             }
             
+            User user = userOpt.get();
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
-            response.put("user", userOpt.get());
+            response.put("user", user);
+            response.put("expiresIn", jwtUtil.getExpiration());
             response.put("message", "Login successful");
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("error", "Invalid credentials");
-            response.put("message", "Login failed");
+            response.put("message", "Login failed: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -167,6 +172,28 @@ public class AuthController {
             response.put("error", e.getMessage());
             response.put("message", "Password reset failed");
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * Get current user endpoint
+     * 
+     * @param authentication the current authentication
+     * @return ResponseEntity containing the current user
+     */
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            Optional<User> userOpt = userService.findByEmail(email);
+            
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            return ResponseEntity.ok(userOpt.get());
+        } catch (Exception e) {
+            return ResponseEntity.status(401).build();
         }
     }
     

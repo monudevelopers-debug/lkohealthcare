@@ -205,6 +205,14 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     long countByStatus(BookingStatus status);
     
     /**
+     * Count bookings by multiple statuses
+     * 
+     * @param statuses the list of booking statuses to count
+     * @return number of bookings with any of the specified statuses
+     */
+    long countByStatusIn(List<BookingStatus> statuses);
+    
+    /**
      * Count bookings by user
      * 
      * @param user the user to count bookings for

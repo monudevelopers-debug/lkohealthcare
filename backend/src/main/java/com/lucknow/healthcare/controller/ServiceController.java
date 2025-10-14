@@ -26,7 +26,7 @@ import java.util.UUID;
  * @version 1.0.0
  */
 @RestController
-@RequestMapping("/api/services")
+@RequestMapping("/services")
 @CrossOrigin(origins = "*")
 public class ServiceController {
     

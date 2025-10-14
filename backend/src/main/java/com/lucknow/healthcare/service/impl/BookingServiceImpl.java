@@ -405,4 +405,109 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
         return true;
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public long countAllBookings() {
+        return bookingRepository.count();
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public long countActiveBookings() {
+        return bookingRepository.countByStatusIn(List.of(
+            BookingStatus.PENDING, 
+            BookingStatus.CONFIRMED, 
+            BookingStatus.IN_PROGRESS
+        ));
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public double calculateTotalRevenue() {
+        List<Booking> completedBookings = bookingRepository.findByStatus(BookingStatus.COMPLETED);
+        return completedBookings.stream()
+            .mapToDouble(booking -> booking.getTotalAmount() != null ? booking.getTotalAmount().doubleValue() : 0.0)
+            .sum();
+    }
+    
+    @Override
+    @Transactional
+    public Booking acceptBooking(UUID id) {
+        Optional<Booking> bookingOpt = bookingRepository.findById(id);
+        if (bookingOpt.isEmpty()) {
+            throw new IllegalArgumentException("Booking not found with ID: " + id);
+        }
+        
+        Booking booking = bookingOpt.get();
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalArgumentException("Only PENDING bookings can be accepted. Current status: " + booking.getStatus());
+        }
+        
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setUpdatedAt(LocalDateTime.now());
+        return bookingRepository.save(booking);
+    }
+    
+    @Override
+    @Transactional
+    public Booking rejectBooking(UUID id, String reason) {
+        Optional<Booking> bookingOpt = bookingRepository.findById(id);
+        if (bookingOpt.isEmpty()) {
+            throw new IllegalArgumentException("Booking not found with ID: " + id);
+        }
+        
+        Booking booking = bookingOpt.get();
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalArgumentException("Only PENDING bookings can be rejected. Current status: " + booking.getStatus());
+        }
+        
+        booking.setStatus(BookingStatus.CANCELLED);
+        if (reason != null && !reason.isEmpty()) {
+            String currentNotes = booking.getNotes() != null ? booking.getNotes() + "\n" : "";
+            booking.setNotes(currentNotes + "Rejection reason: " + reason);
+        }
+        booking.setUpdatedAt(LocalDateTime.now());
+        return bookingRepository.save(booking);
+    }
+    
+    @Override
+    @Transactional
+    public Booking startService(UUID id) {
+        Optional<Booking> bookingOpt = bookingRepository.findById(id);
+        if (bookingOpt.isEmpty()) {
+            throw new IllegalArgumentException("Booking not found with ID: " + id);
+        }
+        
+        Booking booking = bookingOpt.get();
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new IllegalArgumentException("Only CONFIRMED bookings can be started. Current status: " + booking.getStatus());
+        }
+        
+        booking.setStatus(BookingStatus.IN_PROGRESS);
+        booking.setUpdatedAt(LocalDateTime.now());
+        return bookingRepository.save(booking);
+    }
+    
+    @Override
+    @Transactional
+    public Booking completeService(UUID id, String notes) {
+        Optional<Booking> bookingOpt = bookingRepository.findById(id);
+        if (bookingOpt.isEmpty()) {
+            throw new IllegalArgumentException("Booking not found with ID: " + id);
+        }
+        
+        Booking booking = bookingOpt.get();
+        if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("Only IN_PROGRESS bookings can be completed. Current status: " + booking.getStatus());
+        }
+        
+        booking.setStatus(BookingStatus.COMPLETED);
+        if (notes != null && !notes.isEmpty()) {
+            String currentNotes = booking.getNotes() != null ? booking.getNotes() + "\n" : "";
+            booking.setNotes(currentNotes + "Completion notes: " + notes);
+        }
+        booking.setUpdatedAt(LocalDateTime.now());
+        return bookingRepository.save(booking);
+    }
 }

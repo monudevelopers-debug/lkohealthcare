@@ -140,9 +140,12 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+          console.log(`[API] Request to ${config.url} with token: ${token.substring(0, 20)}...`);
+        } else {
+          console.warn(`[API] Request to ${config.url} without token`);
         }
         return config;
       },
@@ -153,9 +156,21 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
+        // Log 401 errors for debugging
         if (error.response?.status === 401) {
-          localStorage.removeItem('authToken');
-          window.location.href = '/login';
+          console.error(`[API] 401 Unauthorized for ${error.config?.url}`);
+          console.error('[API] Token in localStorage:', localStorage.getItem('token') ? 'EXISTS' : 'MISSING');
+          
+          const requestUrl = error.config?.url || '';
+          
+          // Only auto-logout for auth-related endpoints
+          if (requestUrl.includes('/auth/me') || requestUrl.includes('/auth/logout')) {
+            console.warn('[API] Logging out due to 401 on auth endpoint');
+            localStorage.removeItem('token');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
@@ -170,6 +185,7 @@ class ApiClient {
 
   async logout(): Promise<void> {
     await this.client.post('/auth/logout');
+    localStorage.removeItem('token');
     localStorage.removeItem('authToken');
   }
 
@@ -292,17 +308,6 @@ class ApiClient {
     return response.data;
   }
 
-  // Analytics and stats
-  async getAdminStats(period: 'today' | 'week' | 'month' | 'year'): Promise<AdminStats> {
-    const response: AxiosResponse<AdminStats> = await this.client.get(`/admin/stats?period=${period}`);
-    return response.data;
-  }
-
-  async getSystemHealth(): Promise<SystemHealth> {
-    const response: AxiosResponse<SystemHealth> = await this.client.get('/admin/health');
-    return response.data;
-  }
-
   // Detailed analytics (frontend expects these helpers)
   async getAnalytics(period: 'week' | 'month' | 'quarter' | 'year'): Promise<any> {
     try {
@@ -387,45 +392,61 @@ class ApiClient {
   async deleteReview(id: string): Promise<void> {
     await this.client.delete(`/reviews/${id}`);
   }
+
+  // Admin endpoints
+  async getAdminStats(period: 'today' | 'week' | 'month' | 'year'): Promise<AdminStats> {
+    const response: AxiosResponse<AdminStats> = await this.client.get(`/admin/stats?period=${period}`);
+    return response.data;
+  }
+
+  async getSystemHealth(): Promise<SystemHealth> {
+    const response: AxiosResponse<SystemHealth> = await this.client.get('/admin/health');
+    return response.data;
+  }
 }
 
 // Create and export API client instance
 const apiClient = new ApiClient();
 
-// Export individual functions for easier use
-export const {
-  login,
-  logout,
-  getCurrentUser,
-  getUsers,
-  getUserById,
-  updateUserStatus,
-  updateUserRole,
-  getServices,
-  getServiceById,
-  createService,
-  updateService,
-  deleteService,
-  getServiceCategories,
-  createServiceCategory,
-  getProviders,
-  getProviderById,
-  updateProviderStatus,
-  getBookings,
-  getBookingById,
-  updateBookingStatus,
-  assignProvider,
-  getAnalytics,
-  getRevenueData,
-  getUserGrowthData,
-  getBookingTrends,
-  getAdminStats,
-  getSystemHealth,
-  getPayments,
-  processRefund,
-  getReviews,
-  deleteReview,
-} = apiClient;
+// Analytics and stats functions - use apiClient instance methods
+export const getAdminStats = async (period: 'today' | 'week' | 'month' | 'year'): Promise<AdminStats> => {
+  return apiClient.getAdminStats(period);
+};
+
+export const getSystemHealth = async (): Promise<SystemHealth> => {
+  return apiClient.getSystemHealth();
+};
+
+// Export individual functions for easier use (with proper binding)
+export const login = apiClient.login.bind(apiClient);
+export const logout = apiClient.logout.bind(apiClient);
+export const getCurrentUser = apiClient.getCurrentUser.bind(apiClient);
+export const getUsers = apiClient.getUsers.bind(apiClient);
+export const getUserById = apiClient.getUserById.bind(apiClient);
+export const updateUserStatus = apiClient.updateUserStatus.bind(apiClient);
+export const updateUserRole = apiClient.updateUserRole.bind(apiClient);
+export const getServices = apiClient.getServices.bind(apiClient);
+export const getServiceById = apiClient.getServiceById.bind(apiClient);
+export const createService = apiClient.createService.bind(apiClient);
+export const updateService = apiClient.updateService.bind(apiClient);
+export const deleteService = apiClient.deleteService.bind(apiClient);
+export const getServiceCategories = apiClient.getServiceCategories.bind(apiClient);
+export const createServiceCategory = apiClient.createServiceCategory.bind(apiClient);
+export const getProviders = apiClient.getProviders.bind(apiClient);
+export const getProviderById = apiClient.getProviderById.bind(apiClient);
+export const updateProviderStatus = apiClient.updateProviderStatus.bind(apiClient);
+export const getBookings = apiClient.getBookings.bind(apiClient);
+export const getBookingById = apiClient.getBookingById.bind(apiClient);
+export const updateBookingStatus = apiClient.updateBookingStatus.bind(apiClient);
+export const assignProvider = apiClient.assignProvider.bind(apiClient);
+export const getAnalytics = apiClient.getAnalytics.bind(apiClient);
+export const getRevenueData = apiClient.getRevenueData.bind(apiClient);
+export const getUserGrowthData = apiClient.getUserGrowthData.bind(apiClient);
+export const getBookingTrends = apiClient.getBookingTrends.bind(apiClient);
+export const getPayments = apiClient.getPayments.bind(apiClient);
+export const processRefund = apiClient.processRefund.bind(apiClient);
+export const getReviews = apiClient.getReviews.bind(apiClient);
+export const deleteReview = apiClient.deleteReview.bind(apiClient);
 
 // Export axios instance for direct use
 export const api = axios.create({
@@ -439,13 +460,40 @@ export const api = axios.create({
 // Add token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(`[API-Direct] Request to ${config.url} with token: ${token.substring(0, 20)}...`);
+    } else {
+      console.warn(`[API-Direct] Request to ${config.url} without token`);
     }
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Log 401 errors for debugging
+    if (error.response?.status === 401) {
+      console.error(`[API-Direct] 401 Unauthorized for ${error.config?.url}`);
+      console.error('[API-Direct] Token in localStorage:', localStorage.getItem('token') ? 'EXISTS' : 'MISSING');
+      
+      const requestUrl = error.config?.url || '';
+      
+      // Only auto-logout for auth-related endpoints
+      if (requestUrl.includes('/auth/me') || requestUrl.includes('/auth/logout')) {
+        console.warn('[API-Direct] Logging out due to 401 on auth endpoint');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default api;

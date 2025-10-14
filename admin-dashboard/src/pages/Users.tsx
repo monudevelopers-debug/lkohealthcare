@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
-  Users, 
+  Users as UsersIcon, 
   Search,
   Filter,
   MoreVertical,
   Edit,
-  Trash2,
   Eye,
   UserCheck,
   UserX,
@@ -32,7 +31,7 @@ const Users: React.FC = () => {
   // Fetch users
   const { data: usersData, isLoading } = useQuery(
     ['users', roleFilter, statusFilter],
-    () => getUsers(0, 50, roleFilter === 'ALL' ? undefined : roleFilter as any, statusFilter === 'ALL' ? undefined : statusFilter as any),
+    () => getUsers(0, 50, searchTerm || undefined),
     {
       refetchInterval: 60000, // Refetch every minute
     }
@@ -40,8 +39,8 @@ const Users: React.FC = () => {
 
   // Update user status mutation
   const updateStatusMutation = useMutation(
-    ({ id, isActive }: { id: string; isActive: boolean }) => 
-      updateUserStatus(id, isActive),
+    ({ id, status }: { id: string; status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' }) => 
+      updateUserStatus(id, status),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['users']);
@@ -78,8 +77,8 @@ const Users: React.FC = () => {
     }
   };
 
-  const getStatusColor = (isActive: boolean) => {
-    return isActive 
+  const getStatusColor = (status: string) => {
+    return status === 'ACTIVE' 
       ? 'bg-green-100 text-green-800' 
       : 'bg-red-100 text-red-800';
   };
@@ -94,8 +93,9 @@ const Users: React.FC = () => {
     setShowRoleModal(true);
   };
 
-  const handleStatusToggle = (userId: string, currentStatus: boolean) => {
-    updateStatusMutation.mutate({ id: userId, isActive: !currentStatus });
+  const handleStatusToggle = (userId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    updateStatusMutation.mutate({ id: userId, status: newStatus as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' });
   };
 
   return (
@@ -160,7 +160,7 @@ const Users: React.FC = () => {
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="p-8 text-center">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <UsersIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">No users found</p>
           </div>
         ) : (
@@ -195,7 +195,7 @@ const Users: React.FC = () => {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <Users className="h-5 w-5 text-blue-600" />
+                            <UsersIcon className="h-5 w-5 text-blue-600" />
                           </div>
                         </div>
                         <div className="ml-4">
@@ -219,9 +219,9 @@ const Users: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.isActive)}`}>
-                        {user.isActive ? <UserCheck className="w-3 h-3 mr-1" /> : <UserX className="w-3 h-3 mr-1" />}
-                        {user.isActive ? 'Active' : 'Inactive'}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
+                        {user.status === 'ACTIVE' ? <UserCheck className="w-3 h-3 mr-1" /> : <UserX className="w-3 h-3 mr-1" />}
+                        {user.status === 'ACTIVE' ? 'Active' : user.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -244,11 +244,11 @@ const Users: React.FC = () => {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleStatusToggle(user.id, user.isActive)}
-                          className={`${user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
-                          title={user.isActive ? 'Deactivate' : 'Activate'}
+                          onClick={() => handleStatusToggle(user.id, user.status)}
+                          className={`${user.status === 'ACTIVE' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                          title={user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                         >
-                          {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                          {user.status === 'ACTIVE' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                         </button>
                         <button className="text-gray-400 hover:text-gray-600">
                           <MoreVertical className="w-4 h-4" />
@@ -301,9 +301,9 @@ const Users: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedUser.isActive)}`}>
-                    {selectedUser.isActive ? <UserCheck className="w-3 h-3 mr-1" /> : <UserX className="w-3 h-3 mr-1" />}
-                    {selectedUser.isActive ? 'Active' : 'Inactive'}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedUser.status)}`}>
+                    {selectedUser.status === 'ACTIVE' ? <UserCheck className="w-3 h-3 mr-1" /> : <UserX className="w-3 h-3 mr-1" />}
+                    {selectedUser.status === 'ACTIVE' ? 'Active' : selectedUser.status}
                   </span>
                 </div>
                 <div>

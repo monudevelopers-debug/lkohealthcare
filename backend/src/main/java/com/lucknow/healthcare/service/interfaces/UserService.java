@@ -74,6 +74,13 @@ public interface UserService extends UserDetailsService {
     User updateUser(User user);
     
     /**
+     * Count all users
+     * 
+     * @return the total number of users
+     */
+    long countAllUsers();
+    
+    /**
      * Update user password
      * 
      * @param userId the user ID

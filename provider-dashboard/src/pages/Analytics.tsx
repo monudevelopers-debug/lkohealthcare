@@ -16,39 +16,35 @@ import {
   Award
 } from 'lucide-react';
 
-import { getProviderAnalytics, getProviderRevenueData, getProviderBookingTrends, getProviderRatingData } from '../services/api';
+import { getProviderStats, getEarnings, getMyReviews } from '../services/api';
 import Chart from '../components/analytics/Chart';
 
 const Analytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'bookings' | 'ratings' | 'availability'>('revenue');
 
-  // Fetch provider analytics data
-  const { data: analyticsData, isLoading: analyticsLoading } = useQuery(
-    ['provider-analytics', selectedPeriod],
-    () => getProviderAnalytics(selectedPeriod),
+  // Fetch provider stats
+  const { data: statsData, isLoading: analyticsLoading } = useQuery(
+    ['provider-stats', selectedPeriod],
+    () => getProviderStats(selectedPeriod === 'week' || selectedPeriod === 'month' ? selectedPeriod : 'month'),
     {
       refetchInterval: 300000, // Refetch every 5 minutes
     }
   );
 
-  // Fetch revenue data
-  const { data: revenueData, isLoading: revenueLoading } = useQuery(
-    ['provider-revenue', selectedPeriod],
-    () => getProviderRevenueData(selectedPeriod),
+  // Fetch earnings data
+  const { data: earningsData, isLoading: revenueLoading } = useQuery(
+    ['provider-earnings', selectedPeriod],
+    () => getEarnings(selectedPeriod === 'quarter' ? 'month' : selectedPeriod === 'year' ? 'year' : selectedPeriod),
   );
 
-  // Fetch booking trends
-  const { data: bookingTrendsData, isLoading: bookingTrendsLoading } = useQuery(
-    ['provider-booking-trends', selectedPeriod],
-    () => getProviderBookingTrends(selectedPeriod),
-  );
-
-  // Fetch rating data
-  const { data: ratingData, isLoading: ratingLoading } = useQuery(
-    ['provider-ratings', selectedPeriod],
-    () => getProviderRatingData(selectedPeriod),
-  );
+  // Mock data for charts - these can be replaced with real API calls when available
+  const analyticsData = statsData;
+  const revenueData = earningsData;
+  const bookingTrendsData = null;
+  const ratingData = null;
+  const bookingTrendsLoading = false;
+  const ratingLoading = false;
 
   const metrics = [
     {
