@@ -283,6 +283,48 @@ class ApiClient {
 // Create and export API client instance
 const apiClient = new ApiClient();
 
+// Additional provider-specific functions
+export const getProviderAnalytics = (period: 'week' | 'month' | 'quarter' | 'year') => 
+  apiClient.getProviderStats(period === 'week' ? 'week' : period === 'month' ? 'month' : 'month');
+
+export const getProviderRevenueData = (period: 'week' | 'month' | 'quarter' | 'year') => 
+  apiClient.getEarnings(period === 'week' ? 'week' : period === 'month' ? 'month' : 'year');
+
+export const getProviderBookingTrends = (period: 'week' | 'month' | 'quarter' | 'year') => 
+  apiClient.getMyBookings(0, 100);
+
+export const getProviderRatingData = () => 
+  apiClient.getProviderProfile().then(profile => ({ rating: profile.rating }));
+
+export const uploadProviderImage = (file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  return apiClient.client.post('/providers/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+
+export const getProviderReviews = (page = 0, size = 20) => 
+  apiClient.getMyReviews(page, size);
+
+export const getReviewStats = () => 
+  apiClient.getMyReviews(0, 1000).then(reviews => ({
+    totalReviews: reviews.totalElements,
+    averageRating: reviews.content.reduce((sum, review) => sum + review.rating, 0) / reviews.content.length || 0
+  }));
+
+export const getProviderServices = () => 
+  apiClient.getProviderProfile().then(profile => profile.services);
+
+export const addServiceToProvider = (serviceId: string) => 
+  apiClient.client.post(`/providers/services/${serviceId}`);
+
+export const removeServiceFromProvider = (serviceId: string) => 
+  apiClient.client.delete(`/providers/services/${serviceId}`);
+
+export const updateServiceAvailability = (serviceId: string, isAvailable: boolean) => 
+  apiClient.client.patch(`/providers/services/${serviceId}/availability`, { isAvailable });
+
 // Export individual functions for easier use
 export const {
   login,
