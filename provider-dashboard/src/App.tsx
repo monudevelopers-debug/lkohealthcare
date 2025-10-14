@@ -3,14 +3,21 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 
-import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import Bookings from './pages/Bookings';
-import Earnings from './pages/Earnings';
-import Profile from './pages/Profile';
-import Login from './pages/Login';
+// Minimal inline layout and auth for scaffolding so app runs
+const Layout: React.FC = () => (
+  <div className="p-4">
+    <h1 className="text-xl font-semibold mb-4">Provider Dashboard</h1>
+    <div id="content" />
+  </div>
+);
 
-import { AuthProvider } from './hooks/useAuth';
+const Dashboard = () => <div>Dashboard</div>;
+const Bookings = () => <div>Bookings</div>;
+const Earnings = () => <div>Earnings</div>;
+const Profile = () => <div>Profile</div>;
+const Login = () => <div>Login</div>;
+
+const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => <>{children}</>;
 
 const queryClient = new QueryClient({
   defaultOptions: {

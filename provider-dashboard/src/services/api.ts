@@ -1,5 +1,13 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
+// Resolve API base URL in Vite (browser) environments
+const API_BASE_URL: string =
+  (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.VITE_API_URL)
+    ? (import.meta as any).env.VITE_API_URL
+    : (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL)
+      ? (process.env as any).REACT_APP_API_URL
+      : 'http://localhost:8080/api';
+
 // Types
 export interface User {
   id: string;
@@ -111,7 +119,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api',
+      baseURL: API_BASE_URL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',

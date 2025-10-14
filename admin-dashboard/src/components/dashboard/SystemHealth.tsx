@@ -22,7 +22,7 @@ const SystemHealth: React.FC<Props> = ({ health, loading }) => {
     { label: 'Database', value: health.database ?? 'unknown' },
     { label: 'Redis', value: health.redis ?? 'unknown' },
     { label: 'Email', value: health.email ?? 'unknown' },
-    { label: 'Overall', value: health.overall ?? (health.isHealthy ? 'healthy' : 'unhealthy') },
+    { label: 'Overall', value: health.overall ?? (health.isHealthy === false ? 'unhealthy' : 'healthy') },
     { label: 'Last Checked', value: health.lastChecked ?? '-' },
   ];
 

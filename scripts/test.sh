@@ -121,8 +121,13 @@ run_react_tests() {
         # Install dependencies
         npm install
         
-        # Run tests
-        npm test -- --coverage --watchAll=false
+        # Run tests (Vitest)
+        if npm run -s test:ci; then
+          print_success "Admin dashboard tests completed!"
+        else
+          print_error "Admin dashboard tests failed"
+          exit 1
+        fi
         
         print_success "Admin dashboard tests completed!"
         cd "$PROJECT_ROOT"
@@ -136,8 +141,13 @@ run_react_tests() {
         # Install dependencies
         npm install
         
-        # Run tests
-        npm test -- --coverage --watchAll=false
+        # Run tests (Vitest)
+        if npm run -s test:ci; then
+          print_success "Provider dashboard tests completed!"
+        else
+          print_error "Provider dashboard tests failed"
+          exit 1
+        fi
         
         print_success "Provider dashboard tests completed!"
         cd "$PROJECT_ROOT"
