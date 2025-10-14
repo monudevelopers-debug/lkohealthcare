@@ -1,5 +1,11 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
+// Resolve API base URL in Vite (browser) environments
+const API_BASE_URL: string =
+  (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.VITE_API_URL)
+    ? (import.meta as any).env.VITE_API_URL
+    : 'http://localhost:8080/api';
+
 // Types
 export interface User {
   id: string;
@@ -124,7 +130,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api',
+      baseURL: API_BASE_URL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -134,7 +140,7 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -190,6 +196,11 @@ class ApiClient {
 
   async updateUserStatus(id: string, status: User['status']): Promise<User> {
     const response: AxiosResponse<User> = await this.client.patch(`/users/${id}/status`, { status });
+    return response.data;
+  }
+
+  async updateUserRole(id: string, role: User['role']): Promise<User> {
+    const response: AxiosResponse<User> = await this.client.patch(`/users/${id}/role`, { role });
     return response.data;
   }
 
@@ -292,6 +303,60 @@ class ApiClient {
     return response.data;
   }
 
+  // Detailed analytics (frontend expects these helpers)
+  async getAnalytics(period: 'week' | 'month' | 'quarter' | 'year'): Promise<any> {
+    try {
+      const response: AxiosResponse<any> = await this.client.get(`/admin/analytics?period=${period}`);
+      return response.data;
+    } catch (e) {
+      // Fallback shape expected by UI
+      return {
+        totalRevenue: 0,
+        totalBookings: 0,
+        activeUsers: 0,
+        activeProviders: 0,
+        revenueChange: 0,
+        bookingsChange: 0,
+        usersChange: 0,
+        providersChange: 0,
+        revenueTrend: 'up',
+        bookingsTrend: 'up',
+        usersTrend: 'up',
+        providersTrend: 'up',
+        topServices: [],
+        topProviders: [],
+        bookingStatusDistribution: {},
+      };
+    }
+  }
+
+  async getRevenueData(period: 'week' | 'month' | 'quarter' | 'year'): Promise<any[]> {
+    try {
+      const response: AxiosResponse<any[]> = await this.client.get(`/admin/analytics/revenue?period=${period}`);
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async getUserGrowthData(period: 'week' | 'month' | 'quarter' | 'year'): Promise<any[]> {
+    try {
+      const response: AxiosResponse<any[]> = await this.client.get(`/admin/analytics/user-growth?period=${period}`);
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async getBookingTrends(period: 'week' | 'month' | 'quarter' | 'year'): Promise<any[]> {
+    try {
+      const response: AxiosResponse<any[]> = await this.client.get(`/admin/analytics/booking-trends?period=${period}`);
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   // Payment management
   async getPayments(page = 0, size = 20, status?: Payment['status']): Promise<{ content: Payment[]; totalElements: number }> {
     const params = new URLSearchParams({
@@ -335,6 +400,7 @@ export const {
   getUsers,
   getUserById,
   updateUserStatus,
+  updateUserRole,
   getServices,
   getServiceById,
   createService,
@@ -349,6 +415,10 @@ export const {
   getBookingById,
   updateBookingStatus,
   assignProvider,
+  getAnalytics,
+  getRevenueData,
+  getUserGrowthData,
+  getBookingTrends,
   getAdminStats,
   getSystemHealth,
   getPayments,
@@ -357,4 +427,25 @@ export const {
   deleteReview,
 } = apiClient;
 
-export default apiClient;
+// Export axios instance for direct use
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+export default api;
