@@ -6,7 +6,9 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import Bookings from './pages/Bookings';
-import Earnings from './pages/Earnings';
+import Services from './pages/Services';
+import Reviews from './pages/Reviews';
+import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 
@@ -24,15 +26,17 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
+      <Router>
+        <AuthProvider>
           <div className="min-h-screen bg-gray-50">
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Layout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="bookings" element={<Bookings />} />
-                <Route path="earnings" element={<Earnings />} />
+                <Route path="services" element={<Services />} />
+                <Route path="reviews" element={<Reviews />} />
+                <Route path="analytics" element={<Analytics />} />
                 <Route path="profile" element={<Profile />} />
               </Route>
             </Routes>
@@ -47,8 +51,8 @@ function App() {
               }}
             />
           </div>
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </QueryClientProvider>
   );
 }

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucknow Healthcare - Mobile App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .mobile-container {
+            max-width: 375px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="mobile-container">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="p-6 min-h-screen flex flex-col justify-center">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-blue-600 mb-2">Lucknow Healthcare</h1>
+                <p class="text-gray-600">Your healthcare companion</p>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">Login</h2>
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your email" value="john@example.com">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your password" value="password123">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Login
+                    </button>
+                </form>
+            </div>
+            
+            <div class="text-center">
+                <p class="text-sm text-gray-600">Demo credentials: john@example.com / password123</p>
+            </div>
+        </div>
+
+        <!-- Home Screen -->
+        <div id="homeScreen" class="hidden">
+            <!-- Header -->
+            <div class="bg-blue-600 text-white p-4">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-lg font-semibold">Welcome, <span id="userName">User</span></h1>
+                    <button id="logoutBtn" class="text-sm bg-blue-700 px-3 py-1 rounded">Logout</button>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="p-4">
+                <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button onclick="showServices()" class="bg-white p-4 rounded-lg shadow-md text-center">
+                        <div class="text-2xl mb-2">🏥</div>
+                        <div class="text-sm font-medium">Book Service</div>
+                    </button>
+                    <button onclick="showBookings()" class="bg-white p-4 rounded-lg shadow-md text-center">
+                        <div class="text-2xl mb-2">📅</div>
+                        <div class="text-sm font-medium">My Bookings</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Services List -->
+            <div id="servicesList" class="hidden p-4">
+                <h2 class="text-lg font-semibold mb-4">Available Services</h2>
+                <div id="servicesContainer"></div>
+            </div>
+
+            <!-- Bookings List -->
+            <div id="bookingsList" class="hidden p-4">
+                <h2 class="text-lg font-semibold mb-4">My Bookings</h2>
+                <div id="bookingsContainer"></div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bg-white border-t border-gray-200">
+                <div class="flex justify-around py-2">
+                    <button onclick="showHome()" class="flex flex-col items-center py-2 px-4 text-blue-600">
+                        <div class="text-xl">🏠</div>
+                        <div class="text-xs">Home</div>
+                    </button>
+                    <button onclick="showServices()" class="flex flex-col items-center py-2 px-4 text-gray-600">
+                        <div class="text-xl">🏥</div>
+                        <div class="text-xs">Services</div>
+                    </button>
+                    <button onclick="showBookings()" class="flex flex-col items-center py-2 px-4 text-gray-600">
+                        <div class="text-xl">📅</div>
+                        <div class="text-xs">Bookings</div>
+                    </button>
+                    <button onclick="showProfile()" class="flex flex-col items-center py-2 px-4 text-gray-600">
+                        <div class="text-xl">👤</div>
+                        <div class="text-xs">Profile</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let currentUser = null;
+        let authToken = null;
+
+        // Login functionality
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    authToken = data.token;
+                    localStorage.setItem('token', authToken);
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    showHomeScreen();
+                } else {
+                    alert('Login failed. Please check your credentials.');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed. Please try again.');
+            }
+        });
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            currentUser = null;
+            authToken = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            showLoginScreen();
+        });
+
+        // Screen navigation
+        function showLoginScreen() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('homeScreen').classList.add('hidden');
+        }
+
+        function showHomeScreen() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('homeScreen').classList.remove('hidden');
+            document.getElementById('userName').textContent = currentUser?.name || 'User';
+            hideAllSections();
+        }
+
+        function hideAllSections() {
+            document.getElementById('servicesList').classList.add('hidden');
+            document.getElementById('bookingsList').classList.add('hidden');
+        }
+
+        function showHome() {
+            hideAllSections();
+        }
+
+        function showServices() {
+            hideAllSections();
+            document.getElementById('servicesList').classList.remove('hidden');
+            loadServices();
+        }
+
+        function showBookings() {
+            hideAllSections();
+            document.getElementById('bookingsList').classList.remove('hidden');
+            loadBookings();
+        }
+
+        function showProfile() {
+            alert('Profile functionality coming soon!');
+        }
+
+        // Load services
+        async function loadServices() {
+            try {
+                const response = await fetch(`${API_BASE}/services`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const container = document.getElementById('servicesContainer');
+                    container.innerHTML = '';
+
+                    data.content.forEach(service => {
+                        const serviceCard = document.createElement('div');
+                        serviceCard.className = 'bg-white rounded-lg shadow-md p-4 mb-4';
+                        serviceCard.innerHTML = `
+                            <h3 class="font-semibold text-lg mb-2">${service.name}</h3>
+                            <p class="text-gray-600 text-sm mb-2">${service.description}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-blue-600 font-semibold">₹${service.price}</span>
+                                <button onclick="bookService('${service.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm">
+                                    Book Now
+                                </button>
+                            </div>
+                        `;
+                        container.appendChild(serviceCard);
+                    });
+                } else {
+                    console.error('Failed to load services');
+                }
+            } catch (error) {
+                console.error('Error loading services:', error);
+            }
+        }
+
+        // Load bookings
+        async function loadBookings() {
+            try {
+                const response = await fetch(`${API_BASE}/bookings`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const container = document.getElementById('bookingsContainer');
+                    container.innerHTML = '';
+
+                    if (data.content.length === 0) {
+                        container.innerHTML = '<p class="text-gray-600 text-center py-8">No bookings found.</p>';
+                        return;
+                    }
+
+                    data.content.forEach(booking => {
+                        const bookingCard = document.createElement('div');
+                        bookingCard.className = 'bg-white rounded-lg shadow-md p-4 mb-4';
+                        bookingCard.innerHTML = `
+                            <h3 class="font-semibold text-lg mb-2">${booking.service.name}</h3>
+                            <p class="text-gray-600 text-sm mb-1">Date: ${booking.scheduledDate}</p>
+                            <p class="text-gray-600 text-sm mb-1">Time: ${booking.scheduledTime}</p>
+                            <p class="text-gray-600 text-sm mb-2">Provider: ${booking.provider?.name || 'To be assigned'}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="px-2 py-1 rounded text-xs ${getStatusColor(booking.status)}">${booking.status}</span>
+                                <span class="text-blue-600 font-semibold">₹${booking.totalAmount}</span>
+                            </div>
+                        `;
+                        container.appendChild(bookingCard);
+                    });
+                } else {
+                    console.error('Failed to load bookings');
+                }
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+            }
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'CONFIRMED': return 'bg-green-100 text-green-800';
+                case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+                case 'COMPLETED': return 'bg-blue-100 text-blue-800';
+                case 'CANCELLED': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function bookService(serviceId) {
+            alert(`Booking service ${serviceId}. Full booking functionality coming soon!`);
+        }
+
+        // Check if user is already logged in
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('token');
+            const savedUser = localStorage.getItem('user');
+            
+            if (savedToken && savedUser) {
+                authToken = savedToken;
+                currentUser = JSON.parse(savedUser);
+                showHomeScreen();
+            }
+        });
+    </script>
+</body>
+</html>
