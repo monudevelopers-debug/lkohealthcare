@@ -62,7 +62,7 @@ services:
       dockerfile: Dockerfile
     container_name: lucknow-healthcare-provider-dashboard
     ports:
-      - "3001:3000"
+      - "3001:80"
     depends_on:
       - backend
     networks:
@@ -78,7 +78,7 @@ services:
       dockerfile: Dockerfile
     container_name: lucknow-healthcare-admin-dashboard
     ports:
-      - "3002:3000"
+      - "3002:80"
     depends_on:
       - backend
     networks:
