@@ -234,10 +234,6 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
         }
     }
     
-    private String formatDateTime(LocalDateTime dateTime) {
-        return dateTime.format(DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy 'at' h:mm a"));
-    }
-    
     private String formatDate(LocalDate date) {
         return date.format(DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy"));
     }
