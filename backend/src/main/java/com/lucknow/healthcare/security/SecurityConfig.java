@@ -53,19 +53,20 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/api/users/register", "/api/users/authenticate", "/api/users/verify-email", 
-                               "/api/users/reset-password-token", "/api/users/reset-password",
-                               "/api/service-categories/active", "/api/services/active", 
-                               "/api/providers/available-verified", "/api/providers/top-rated",
-                               "/api/providers/available", "/api/providers/search", "/api/providers/search/qualification")
+                .requestMatchers("/auth/**", "/actuator/**").permitAll()
+                .requestMatchers("/users/register", "/users/authenticate", "/users/verify-email", 
+                               "/users/reset-password-token", "/users/reset-password",
+                               "/service-categories/active", "/services/active", 
+                               "/providers/available-verified", "/providers/top-rated",
+                               "/providers/available", "/providers/search", "/providers/search/qualification")
                 .permitAll()
-                .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
-                .requestMatchers("/api/service-categories/**").hasAnyRole("ADMIN", "PROVIDER")
-                .requestMatchers("/api/services/**").hasAnyRole("ADMIN", "PROVIDER")
-                .requestMatchers("/api/providers/**").hasAnyRole("ADMIN", "PROVIDER")
-                .requestMatchers("/api/bookings/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
-                .requestMatchers("/api/payments/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
-                .requestMatchers("/api/reviews/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
+                .requestMatchers("/users/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
+                .requestMatchers("/service-categories/**").hasAnyRole("ADMIN", "PROVIDER")
+                .requestMatchers("/services/**").hasAnyRole("ADMIN", "PROVIDER")
+                .requestMatchers("/providers/**").hasAnyRole("ADMIN", "PROVIDER")
+                .requestMatchers("/bookings/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
+                .requestMatchers("/payments/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
+                .requestMatchers("/reviews/**").hasAnyRole("ADMIN", "USER", "PROVIDER")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))

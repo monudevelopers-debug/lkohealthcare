@@ -182,7 +182,7 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
      * @return List of top-rated reviews for the specified provider
      */
     @Query("SELECT r FROM Review r WHERE r.provider = :provider ORDER BY r.rating DESC, r.createdAt DESC")
-    List<Review> findTopRatedReviewsByProvider(@Param("provider") Provider provider, @Param("limit") int limit);
+    List<Review> findTopRatedReviewsByProvider(@Param("provider") Provider provider, Pageable pageable);
     
     /**
      * Find recent reviews for a provider
@@ -192,7 +192,7 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
      * @return List of recent reviews for the specified provider
      */
     @Query("SELECT r FROM Review r WHERE r.provider = :provider ORDER BY r.createdAt DESC")
-    List<Review> findRecentReviewsByProvider(@Param("provider") Provider provider, @Param("limit") int limit);
+    List<Review> findRecentReviewsByProvider(@Param("provider") Provider provider, Pageable pageable);
     
     /**
      * Find reviews with comments

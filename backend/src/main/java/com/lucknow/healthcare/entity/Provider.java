@@ -69,7 +69,7 @@ public class Provider {
     
     @DecimalMin(value = "0.0", message = "Rating cannot be negative")
     @DecimalMax(value = "5.0", message = "Rating cannot exceed 5.0")
-    @Column(nullable = false, precision = 3, scale = 2)
+    @Column(nullable = false, precision = 3)
     private Double rating = 0.0;
     
     @Min(value = 0, message = "Total ratings cannot be negative")

@@ -10,8 +10,12 @@ spring:
   profiles:
     active: dev
   
+  main:
+    allow-bean-definition-overriding: true
+    allow-circular-references: true
+  
   datasource:
-    url: jdbc:postgresql://localhost:5432/lucknow_healthcare
+    jdbc-url: jdbc:postgresql://localhost:5432/lucknow_healthcare
     username: healthcare_user
     password: healthcare_password
     driver-class-name: org.postgresql.Driver

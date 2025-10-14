@@ -142,7 +142,7 @@ public class ProviderServiceImpl implements ProviderService {
     @Override
     @Transactional(readOnly = true)
     public List<Provider> getAvailableAndVerifiedProviders() {
-        return providerRepository.findAvailableAndVerifiedProviders();
+        return providerRepository.findByAvailabilityStatusAndIsVerifiedTrue(AvailabilityStatus.AVAILABLE);
     }
     
     @Override
@@ -214,7 +214,7 @@ public class ProviderServiceImpl implements ProviderService {
     @Override
     @Transactional(readOnly = true)
     public Page<Provider> getAvailableAndVerifiedProviders(Pageable pageable) {
-        return providerRepository.findAvailableAndVerifiedProviders(pageable);
+        return providerRepository.findByAvailabilityStatusAndIsVerifiedTrue(AvailabilityStatus.AVAILABLE, pageable);
     }
     
     @Override

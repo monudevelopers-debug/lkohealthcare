@@ -64,7 +64,7 @@ public interface ProviderRepository extends JpaRepository<Provider, UUID> {
      * @return List of available and verified providers
      */
     @Query("SELECT p FROM Provider p WHERE p.availabilityStatus = 'AVAILABLE' AND p.isVerified = true")
-    List<Provider> findAvailableAndVerifiedProviders();
+    List<Provider> findByAvailabilityStatusAndIsVerifiedTrue(AvailabilityStatus availabilityStatus);
     
     /**
      * Find providers by minimum rating
@@ -171,5 +171,5 @@ public interface ProviderRepository extends JpaRepository<Provider, UUID> {
     // Pageable methods
     Page<Provider> findByAvailabilityStatus(AvailabilityStatus availabilityStatus, Pageable pageable);
     Page<Provider> findByIsVerified(Boolean isVerified, Pageable pageable);
-    Page<Provider> findAvailableAndVerifiedProviders(Pageable pageable);
+    Page<Provider> findByAvailabilityStatusAndIsVerifiedTrue(AvailabilityStatus availabilityStatus, Pageable pageable);
 }

@@ -25,7 +25,7 @@ import java.util.Optional;
  * @version 1.0.0
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @CrossOrigin(origins = "*")
 public class AuthController {
     
