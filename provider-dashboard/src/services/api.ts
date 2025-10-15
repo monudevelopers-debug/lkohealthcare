@@ -135,9 +135,19 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+          const requestUrl = error.config?.url || '';
+          
+          // Skip auto-logout for login endpoint (to avoid redirect loops)
+          if (!requestUrl.includes('/auth/login')) {
+            console.warn('[API] Token expired or invalid - logging out');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            // Only redirect if not already on login page
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          }
         }
         return Promise.reject(error);
       }

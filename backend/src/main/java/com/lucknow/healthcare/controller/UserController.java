@@ -76,7 +76,7 @@ public class UserController {
      * @return ResponseEntity containing paginated users
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'PROVIDER', 'CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROVIDER', 'CUSTOMER')")
     public ResponseEntity<Page<User>> getUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -161,9 +161,28 @@ public class UserController {
      * @return ResponseEntity containing the updated user
      */
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<User> updateUserStatus(@PathVariable UUID id, @RequestParam UserStatus status) {
         try {
             User updatedUser = userService.updateUserStatus(id, status);
+            return ResponseEntity.ok(updatedUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Update user role
+     * 
+     * @param id the user ID
+     * @param role the new role
+     * @return ResponseEntity containing the updated user
+     */
+    @PutMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<User> updateUserRole(@PathVariable UUID id, @RequestParam UserRole role) {
+        try {
+            User updatedUser = userService.updateUserRole(id, role);
             return ResponseEntity.ok(updatedUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();

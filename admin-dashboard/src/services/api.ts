@@ -163,13 +163,17 @@ class ApiClient {
           
           const requestUrl = error.config?.url || '';
           
-          // Only auto-logout for auth-related endpoints
-          if (requestUrl.includes('/auth/me') || requestUrl.includes('/auth/logout')) {
-            console.warn('[API] Logging out due to 401 on auth endpoint');
+          // Skip auto-logout for login endpoint (to avoid redirect loops)
+          if (!requestUrl.includes('/auth/login')) {
+            console.warn('[API] Token expired or invalid - logging out');
             localStorage.removeItem('token');
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            
+            // Only redirect if not already on login page
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
           }
         }
         return Promise.reject(error);
@@ -211,12 +215,12 @@ class ApiClient {
   }
 
   async updateUserStatus(id: string, status: User['status']): Promise<User> {
-    const response: AxiosResponse<User> = await this.client.patch(`/users/${id}/status`, { status });
+    const response: AxiosResponse<User> = await this.client.put(`/users/${id}/status?status=${status}`);
     return response.data;
   }
 
   async updateUserRole(id: string, role: User['role']): Promise<User> {
-    const response: AxiosResponse<User> = await this.client.patch(`/users/${id}/role`, { role });
+    const response: AxiosResponse<User> = await this.client.put(`/users/${id}/role?role=${role}`);
     return response.data;
   }
 

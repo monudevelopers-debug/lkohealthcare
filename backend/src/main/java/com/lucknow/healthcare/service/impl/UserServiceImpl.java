@@ -134,6 +134,20 @@ public class UserServiceImpl implements UserService {
     }
     
     @Override
+    public User updateUserRole(UUID userId, UserRole role) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        
+        if (userOpt.isEmpty()) {
+            throw new IllegalArgumentException("User not found with ID: " + userId);
+        }
+        
+        User user = userOpt.get();
+        user.setRole(role);
+        
+        return userRepository.save(user);
+    }
+    
+    @Override
     public boolean verifyEmail(String token) {
         Optional<User> userOpt = userRepository.findByEmailVerificationToken(token);
         

@@ -101,6 +101,16 @@ public interface UserService extends UserDetailsService {
     User updateUserStatus(UUID userId, UserStatus status);
     
     /**
+     * Update user role
+     * 
+     * @param userId the user ID
+     * @param role the new role
+     * @return the updated user
+     * @throws IllegalArgumentException if user not found
+     */
+    User updateUserRole(UUID userId, UserRole role);
+    
+    /**
      * Verify user email
      * 
      * @param token the email verification token
