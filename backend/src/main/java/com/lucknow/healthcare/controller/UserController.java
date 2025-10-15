@@ -29,7 +29,7 @@ import java.util.UUID;
  * @version 1.0.0
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @CrossOrigin(origins = "*")
 public class UserController {
     
