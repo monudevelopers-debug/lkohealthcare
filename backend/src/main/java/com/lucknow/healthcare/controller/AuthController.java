@@ -38,6 +38,9 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
     
+    @Autowired
+    private com.lucknow.healthcare.service.TwilioService twilioService;
+    
     /**
      * Login endpoint
      * 
@@ -194,6 +197,129 @@ public class AuthController {
             return ResponseEntity.ok(userOpt.get());
         } catch (Exception e) {
             return ResponseEntity.status(401).build();
+        }
+    }
+    
+    /**
+     * Logout endpoint
+     * 
+     * @return ResponseEntity with success message
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout() {
+        // Token invalidation is handled client-side by removing the token
+        // This endpoint just confirms the logout action
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Logout successful");
+        response.put("success", true);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * Refresh token endpoint
+     * 
+     * @param authentication the current authentication
+     * @return ResponseEntity with new token and user data
+     */
+    @PostMapping("/refresh-token")
+    public ResponseEntity<Map<String, Object>> refreshToken(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            Optional<User> userOpt = userService.findByEmail(email);
+            
+            if (userOpt.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("error", "User not found");
+                response.put("message", "Token refresh failed");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            User user = userOpt.get();
+            UserDetails userDetails = org.springframework.security.core.userdetails.User
+                .withUsername(user.getEmail())
+                .password(user.getPassword())
+                .authorities("ROLE_" + user.getRole().name())
+                .build();
+            
+            String newToken = jwtUtil.generateToken(userDetails);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", newToken);
+            response.put("user", user);
+            response.put("expiresIn", jwtUtil.getExpiration());
+            response.put("message", "Token refreshed successfully");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", "Token refresh failed");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(401).body(response);
+        }
+    }
+    
+    /**
+     * Send OTP to phone number
+     * 
+     * @param request Map containing phone number
+     * @return ResponseEntity with success message
+     */
+    @PostMapping("/send-otp")
+    public ResponseEntity<Map<String, String>> sendOTP(@RequestBody Map<String, String> request) {
+        try {
+            String phoneNumber = request.get("phone");
+            
+            if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Phone number is required"
+                ));
+            }
+            
+            twilioService.sendOTP(phoneNumber);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "OTP sent successfully to " + phoneNumber,
+                "phone", phoneNumber
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Failed to send OTP: " + e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Verify OTP
+     * 
+     * @param request Map containing phone number and OTP
+     * @return ResponseEntity with verification result
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<Map<String, Object>> verifyOTP(@RequestBody Map<String, String> request) {
+        try {
+            String phoneNumber = request.get("phone");
+            String otp = request.get("otp");
+            
+            if (phoneNumber == null || otp == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "verified", false,
+                    "error", "Phone number and OTP are required"
+                ));
+            }
+            
+            Map<String, Object> result = twilioService.verifyOTP(phoneNumber, otp);
+            
+            if ((boolean) result.get("verified")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "verified", false,
+                "error", "Verification failed: " + e.getMessage()
+            ));
         }
     }
     

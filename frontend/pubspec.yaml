@@ -33,7 +33,7 @@ dependencies:
   formz: ^0.6.1
   
   # Date & Time
-  intl: ^0.18.1
+  intl: ^0.20.2
   
   # Image Handling
   cached_network_image: ^3.3.0
@@ -54,6 +54,7 @@ dependencies:
   # Utils
   uuid: ^4.2.1
   path_provider: ^2.1.1
+  dartz: ^0.10.1
   
   # Internationalization
   flutter_localizations:
@@ -61,6 +62,8 @@ dependencies:
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   flutter_lints: ^3.0.1
   bloc_test: ^9.1.5
@@ -73,10 +76,3 @@ flutter:
   assets:
     - assets/images/
     - assets/translations/
-  
-  fonts:
-    - family: Roboto
-      fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
-        - asset: assets/fonts/Roboto-Bold.ttf
-          weight: 700

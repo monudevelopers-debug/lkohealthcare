@@ -6,6 +6,7 @@ import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/error_widget.dart';
 import '../../widgets/service/service_card.dart';
 import '../../widgets/service/category_filter.dart';
+import '../booking/book_service_page.dart';
 
 class ServicesPage extends StatefulWidget {
   const ServicesPage({super.key});
@@ -104,7 +105,7 @@ class _ServicesPageState extends State<ServicesPage> {
                 if (state is ServiceLoading) {
                   return const LoadingWidget();
                 } else if (state is ServiceFailure) {
-                  return ErrorWidget(
+                  return CustomErrorWidget(
                     message: state.message,
                     onRetry: () {
                       context.read<ServiceBloc>().add(LoadServices());
@@ -194,7 +195,7 @@ class _ServicesPageState extends State<ServicesPage> {
             ListTile(
               title: const Text('Nursing Care'),
               leading: Radio<String>(
-                value: 'NURSING',
+                value: 'Nursing Care',
                 groupValue: _selectedCategory,
                 onChanged: (value) {
                   setState(() {
@@ -208,7 +209,7 @@ class _ServicesPageState extends State<ServicesPage> {
             ListTile(
               title: const Text('Elderly Care'),
               leading: Radio<String>(
-                value: 'ELDERLY',
+                value: 'Elderly Care',
                 groupValue: _selectedCategory,
                 onChanged: (value) {
                   setState(() {
@@ -222,7 +223,7 @@ class _ServicesPageState extends State<ServicesPage> {
             ListTile(
               title: const Text('Physiotherapy'),
               leading: Radio<String>(
-                value: 'PHYSIOTHERAPY',
+                value: 'Physiotherapy',
                 groupValue: _selectedCategory,
                 onChanged: (value) {
                   setState(() {
@@ -236,7 +237,7 @@ class _ServicesPageState extends State<ServicesPage> {
             ListTile(
               title: const Text('Child Care'),
               leading: Radio<String>(
-                value: 'CHILD_CARE',
+                value: 'Child Care',
                 groupValue: _selectedCategory,
                 onChanged: (value) {
                   setState(() {
@@ -248,9 +249,9 @@ class _ServicesPageState extends State<ServicesPage> {
               ),
             ),
             ListTile(
-              title: const Text('Ambulance'),
+              title: const Text('Ambulance Services'),
               leading: Radio<String>(
-                value: 'AMBULANCE',
+                value: 'Ambulance Services',
                 groupValue: _selectedCategory,
                 onChanged: (value) {
                   setState(() {
@@ -340,7 +341,12 @@ class _ServicesPageState extends State<ServicesPage> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    // TODO: Navigate to booking page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BookServicePage(service: service),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1976D2),

@@ -15,7 +15,7 @@ import {
   Shield
 } from 'lucide-react';
 
-import { getUsers, updateUserStatus, updateUserRole } from '../services/api';
+import { getUsers, updateUserStatus, updateUserRole, updateUser } from '../services/api';
 import { User } from '../services/api';
 
 const Users: React.FC = () => {
@@ -25,13 +25,32 @@ const Users: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<'top' | 'bottom'>('bottom');
   
   const queryClient = useQueryClient();
 
+  const handleMenuClick = (userId: string, event: React.MouseEvent) => {
+    if (openMenuId === userId) {
+      setOpenMenuId(null);
+      return;
+    }
+    
+    // Calculate if menu should open upward or downward
+    const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - buttonRect.bottom;
+    
+    // If less than 300px below, open upward; otherwise open downward
+    setMenuPosition(spaceBelow < 300 ? 'top' : 'bottom');
+    setOpenMenuId(userId);
+  };
+
   // Fetch users
   const { data: usersData, isLoading } = useQuery(
-    ['users', roleFilter, statusFilter],
-    () => getUsers(0, 50, searchTerm || undefined),
+    ['users'],
+    () => getUsers(0, 1000), // Get all users
     {
       refetchInterval: 60000, // Refetch every minute
     }
@@ -61,12 +80,34 @@ const Users: React.FC = () => {
     }
   );
 
-  const users = usersData?.content || [];
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Update user mutation
+  const updateUserMutation = useMutation(
+    (userData: User) => updateUser(userData.id, userData),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['users']);
+        setShowEditModal(false);
+        setSelectedUser(null);
+      },
+    }
   );
+
+  const users = usersData?.content || [];
+  const filteredUsers = users.filter(user => {
+    // Apply search filter
+    const matchesSearch = searchTerm === '' ||
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Apply role filter
+    const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
+    
+    // Apply status filter
+    const matchesStatus = statusFilter === 'ALL' || user.status === statusFilter;
+    
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -91,6 +132,24 @@ const Users: React.FC = () => {
   const handleChangeRole = (user: User) => {
     setSelectedUser(user);
     setShowRoleModal(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateUser = (formData: FormData) => {
+    if (!selectedUser) return;
+    
+    const updatedUser: User = {
+      ...selectedUser,
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      phone: formData.get('phone') as string,
+    };
+    
+    updateUserMutation.mutate(updatedUser);
   };
 
   const handleStatusToggle = (userId: string, currentStatus: string) => {
@@ -237,11 +296,18 @@ const Users: React.FC = () => {
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleChangeRole(user)}
+                          onClick={() => handleEditUser(user)}
                           className="text-green-600 hover:text-green-900"
-                          title="Change Role"
+                          title="Edit User Details"
                         >
                           <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleChangeRole(user)}
+                          className="text-purple-600 hover:text-purple-900"
+                          title="Change Role"
+                        >
+                          <Shield className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleStatusToggle(user.id, user.status)}
@@ -250,9 +316,63 @@ const Users: React.FC = () => {
                         >
                           {user.status === 'ACTIVE' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                         </button>
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
+                        <div className="relative">
+                          <button 
+                            onClick={(e) => handleMenuClick(user.id, e)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                          {openMenuId === user.id && (
+                            <div className={`absolute right-0 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${
+                              menuPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+                            }`}>
+                              <button
+                                onClick={() => {
+                                  handleViewDetails(user);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <Eye className="w-4 h-4" />
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleEditUser(user);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <Edit className="w-4 h-4" />
+                                Edit User
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleChangeRole(user);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <Shield className="w-4 h-4" />
+                                Change Role
+                              </button>
+                              <div className="border-t border-gray-200 my-1"></div>
+                              <button
+                                onClick={() => {
+                                  handleStatusToggle(user.id, user.status);
+                                  setOpenMenuId(null);
+                                }}
+                                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2 ${
+                                  user.status === 'ACTIVE' ? 'text-red-600' : 'text-green-600'
+                                }`}
+                              >
+                                {user.status === 'ACTIVE' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                                {user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -390,6 +510,115 @@ const Users: React.FC = () => {
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
                   {updateRoleMutation.isLoading ? 'Updating...' : 'Update Role'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Edit User Details
+            </h3>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateUser(new FormData(e.currentTarget));
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    defaultValue={selectedUser.name}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    defaultValue={selectedUser.email}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    required
+                    defaultValue={selectedUser.phone}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Role
+                  </label>
+                  <select
+                    name="role"
+                    disabled
+                    defaultValue={selectedUser.role}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed"
+                  >
+                    <option value="CUSTOMER">Customer</option>
+                    <option value="PROVIDER">Provider</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Use role button to change role</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    selectedUser.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 
+                    selectedUser.status === 'INACTIVE' ? 'bg-gray-100 text-gray-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedUser.status}
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1">Use status toggle to change</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> Only name, email, and phone can be edited here. Use respective buttons for role and status changes.
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateUserMutation.isLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {updateUserMutation.isLoading ? 'Updating...' : 'Update User'}
                 </button>
               </div>
             </form>

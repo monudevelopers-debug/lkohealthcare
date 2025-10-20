@@ -24,8 +24,27 @@ const Services: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<'top' | 'bottom'>('bottom');
   
   const queryClient = useQueryClient();
+
+  const handleMenuClick = (serviceId: string, event: React.MouseEvent) => {
+    if (openMenuId === serviceId) {
+      setOpenMenuId(null);
+      return;
+    }
+    
+    // Calculate if menu should open upward or downward
+    const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - buttonRect.bottom;
+    
+    // If less than 300px below, open upward; otherwise open downward
+    setMenuPosition(spaceBelow < 300 ? 'top' : 'bottom');
+    setOpenMenuId(serviceId);
+  };
 
   // Fetch services
   const { data: servicesData, isLoading } = useQuery(
@@ -81,11 +100,15 @@ const Services: React.FC = () => {
   const services = servicesData?.content || [];
   const categories = categoriesData || [];
   
-  const filteredServices = services.filter(service =>
-    service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.category.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredServices = services.filter(service => {
+    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.category.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = categoryFilter === 'ALL' || service.category.id === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   const handleEdit = (service: Service) => {
     setSelectedService(service);
@@ -95,6 +118,11 @@ const Services: React.FC = () => {
   const handleDelete = (service: Service) => {
     setSelectedService(service);
     setShowDeleteModal(true);
+  };
+
+  const handleViewDetails = (service: Service) => {
+    setSelectedService(service);
+    setShowDetailsModal(true);
   };
 
   const handleDeleteConfirm = () => {
@@ -194,9 +222,51 @@ const Services: React.FC = () => {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={(e) => handleMenuClick(service.id, e)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                    {openMenuId === service.id && (
+                      <div className={`absolute right-0 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${
+                        menuPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+                      }`}>
+                        <button
+                          onClick={() => {
+                            handleViewDetails(service);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleEdit(service);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit Service
+                        </button>
+                        <div className="border-t border-gray-200 my-1"></div>
+                        <button
+                          onClick={() => {
+                            handleDelete(service);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete Service
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -492,6 +562,61 @@ const Services: React.FC = () => {
       )}
 
       {/* Delete Confirmation Modal */}
+      {/* Service Details Modal */}
+      {showDetailsModal && selectedService && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Service Details
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Service Name</label>
+                  <p className="text-sm text-gray-900 font-semibold">{selectedService.name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Category</label>
+                  <p className="text-sm text-gray-900">{selectedService.category.name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Price</label>
+                  <p className="text-sm text-gray-900 font-semibold">₹{selectedService.price}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Duration</label>
+                  <p className="text-sm text-gray-900">{selectedService.duration} minutes</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    selectedService.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedService.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Service ID</label>
+                  <p className="text-xs text-gray-500 font-mono">{selectedService.id}</p>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <p className="text-sm text-gray-900">{selectedService.description}</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showDeleteModal && selectedService && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">

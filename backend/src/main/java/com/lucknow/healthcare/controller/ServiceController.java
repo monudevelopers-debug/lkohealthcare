@@ -101,12 +101,33 @@ public class ServiceController {
     }
     
     /**
-     * Get all services
+     * Get all services, optionally filtered by category name or ID
      * 
+     * @param categoryId optional category ID or name to filter by
      * @return ResponseEntity containing the list of services
      */
     @GetMapping
-    public ResponseEntity<List<Service>> getAllServices() {
+    public ResponseEntity<List<Service>> getAllServices(
+            @RequestParam(required = false) String categoryId) {
+        if (categoryId != null && !categoryId.trim().isEmpty()) {
+            // Try to parse as UUID first
+            try {
+                UUID categoryUUID = UUID.fromString(categoryId);
+                List<Service> services = serviceService.getServicesByCategoryId(categoryUUID);
+                return ResponseEntity.ok(services);
+            } catch (IllegalArgumentException e) {
+                // Not a UUID, try to find category by name
+                Optional<ServiceCategory> categoryOpt = serviceCategoryService.findByName(categoryId);
+                if (categoryOpt.isPresent()) {
+                    List<Service> services = serviceService.getServicesByCategory(categoryOpt.get());
+                    return ResponseEntity.ok(services);
+                } else {
+                    // Category not found, return empty list
+                    return ResponseEntity.ok(List.of());
+                }
+            }
+        }
+        
         List<Service> services = serviceService.getAllServices();
         return ResponseEntity.ok(services);
     }

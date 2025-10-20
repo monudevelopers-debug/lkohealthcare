@@ -2,7 +2,7 @@ class Service {
   final String? id;
   final String? name;
   final String? description;
-  final String? category;
+  final String? categoryName;
   final String? categoryId;
   final double? price;
   final int? duration;
@@ -14,7 +14,7 @@ class Service {
     this.id,
     this.name,
     this.description,
-    this.category,
+    this.categoryName,
     this.categoryId,
     this.price,
     this.duration,
@@ -24,12 +24,24 @@ class Service {
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
+    // Extract category info from nested object if present
+    String? catName;
+    String? catId;
+    
+    if (json['category'] is Map) {
+      final categoryMap = json['category'] as Map<String, dynamic>;
+      catName = categoryMap['name'];
+      catId = categoryMap['id']?.toString();
+    } else if (json['category'] is String) {
+      catName = json['category'];
+    }
+    
     return Service(
       id: json['id']?.toString(),
       name: json['name'],
       description: json['description'],
-      category: json['category'],
-      categoryId: json['categoryId']?.toString(),
+      categoryName: catName,
+      categoryId: catId ?? json['categoryId']?.toString(),
       price: json['price']?.toDouble(),
       duration: json['duration'],
       isActive: json['isActive'],
@@ -47,7 +59,7 @@ class Service {
       'id': id,
       'name': name,
       'description': description,
-      'category': category,
+      'categoryName': categoryName,
       'categoryId': categoryId,
       'price': price,
       'duration': duration,
@@ -61,7 +73,7 @@ class Service {
     String? id,
     String? name,
     String? description,
-    String? category,
+    String? categoryName,
     String? categoryId,
     double? price,
     int? duration,
@@ -73,7 +85,7 @@ class Service {
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
-      category: category ?? this.category,
+      categoryName: categoryName ?? this.categoryName,
       categoryId: categoryId ?? this.categoryId,
       price: price ?? this.price,
       duration: duration ?? this.duration,
@@ -85,7 +97,7 @@ class Service {
 
   @override
   String toString() {
-    return 'Service(id: $id, name: $name, category: $category, price: $price, duration: $duration)';
+    return 'Service(id: $id, name: $name, category: $categoryName, price: $price, duration: $duration)';
   }
 
   @override

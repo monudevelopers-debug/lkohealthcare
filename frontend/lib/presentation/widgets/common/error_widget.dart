@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class ErrorWidget extends StatelessWidget {
+class CustomErrorWidget extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
   final IconData? icon;
   final String? retryText;
 
-  const ErrorWidget({
+  const CustomErrorWidget({
     super.key,
     required this.message,
     this.onRetry,

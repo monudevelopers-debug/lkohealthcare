@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../bloc/auth/auth_bloc.dart';
 import '../../widgets/common/loading_widget.dart';
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -16,10 +17,21 @@ class ProfilePage extends StatelessWidget {
         backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Navigate to edit profile
+          BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, state) {
+              return IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: state is AuthSuccess
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditProfilePage(user: state.user),
+                          ),
+                        );
+                      }
+                    : null,
+              );
             },
           ),
         ],

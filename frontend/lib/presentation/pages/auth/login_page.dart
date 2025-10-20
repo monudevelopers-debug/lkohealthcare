@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../bloc/auth/auth_bloc.dart';
 import '../../widgets/common/loading_widget.dart';
-import '../../widgets/common/error_widget.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

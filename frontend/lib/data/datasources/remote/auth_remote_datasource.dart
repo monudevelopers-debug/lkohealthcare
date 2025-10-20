@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../core/error/failures.dart';
-import '../../domain/entities/user.dart';
+import 'package:lucknow_healthcare/core/error/failures.dart';
+import 'package:lucknow_healthcare/domain/entities/user.dart';
 
 abstract class AuthRemoteDataSource {
   Future<User> login({
@@ -55,7 +55,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await dio.post(
-        '/api/users/authenticate',
+        '/api/auth/login',
         data: {
           'email': email,
           'password': password,
@@ -63,7 +63,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        return User.fromJson(response.data);
+        // API returns: {token: "...", user: {...}, message: "...", expiresIn: ...}
+        final userData = response.data['user'] as Map<String, dynamic>;
+        final token = response.data['token'] as String;
+        
+        // Add token to user data
+        userData['token'] = token;
+        
+        return User.fromJson(userData);
       } else {
         throw ServerFailure(message: 'Login failed');
       }
@@ -93,7 +100,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await dio.post(
-        '/api/users/register',
+        '/api/auth/register',
         data: {
           'name': name,
           'email': email,
@@ -103,8 +110,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         },
       );
 
-      if (response.statusCode == 201) {
-        return User.fromJson(response.data);
+      if (response.statusCode == 200) {
+        // API returns: {message: "...", user: {...}}
+        final userData = response.data['user'] as Map<String, dynamic>;
+        return User.fromJson(userData);
       } else {
         throw ServerFailure(message: 'Registration failed');
       }
@@ -117,7 +126,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       } else if (e.response?.statusCode == 409) {
         throw ValidationFailure(message: 'Email already exists');
       } else {
-        throw ServerFailure(message: e.message ?? 'Registration failed');
+        throw ServerFailure(message: e.message ?? 'Login failed. Please try again.');
       }
     } catch (e) {
       throw UnknownFailure(message: e.toString());
@@ -127,7 +136,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<User> getCurrentUser() async {
     try {
-      final response = await dio.get('/api/users/me');
+      final response = await dio.get('/api/auth/me');
 
       if (response.statusCode == 200) {
         return User.fromJson(response.data);
@@ -151,7 +160,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<User> refreshToken() async {
     try {
-      final response = await dio.post('/api/users/refresh-token');
+      final response = await dio.post('/api/auth/refresh-token');
 
       if (response.statusCode == 200) {
         return User.fromJson(response.data);
@@ -175,8 +184,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     try {
-      await dio.post('/api/users/logout');
-    } on DioException catch (e) {
+      await dio.post('/api/auth/logout');
+    } on DioException {
       // Logout should not throw errors even if the server call fails
       // The local token should be cleared regardless
     }
@@ -186,8 +195,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> forgotPassword({required String email}) async {
     try {
       await dio.post(
-        '/api/users/forgot-password',
-        data: {'email': email},
+        '/api/auth/reset-password-token',
+        queryParameters: {'email': email},
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -210,10 +219,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       await dio.post(
-        '/api/users/reset-password',
-        data: {
+        '/api/auth/reset-password',
+        queryParameters: {
           'token': token,
-          'password': password,
+          'newPassword': password,
         },
       );
     } on DioException catch (e) {
@@ -276,9 +285,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       await dio.put(
-        '/api/users/$userId/change-password',
-        data: {
-          'currentPassword': currentPassword,
+        '/api/users/$userId/password',
+        queryParameters: {
           'newPassword': newPassword,
         },
       );

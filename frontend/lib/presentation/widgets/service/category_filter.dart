@@ -11,11 +11,11 @@ class CategoryFilter extends StatelessWidget {
     required this.onCategorySelected,
     this.categories = const [
       'ALL',
-      'NURSING',
-      'ELDERLY',
-      'PHYSIOTHERAPY',
-      'CHILD_CARE',
-      'AMBULANCE',
+      'Nursing Care',
+      'Elderly Care',
+      'Physiotherapy',
+      'Child Care',
+      'Ambulance Services',
     ],
   });
 
@@ -64,21 +64,10 @@ class CategoryFilter extends StatelessWidget {
   }
 
   String _getCategoryLabel(String category) {
-    switch (category) {
-      case 'ALL':
-        return 'All';
-      case 'NURSING':
-        return 'Nursing';
-      case 'ELDERLY':
-        return 'Elderly Care';
-      case 'PHYSIOTHERAPY':
-        return 'Physiotherapy';
-      case 'CHILD_CARE':
-        return 'Child Care';
-      case 'AMBULANCE':
-        return 'Ambulance';
-      default:
-        return category;
+    if (category == 'ALL') {
+      return 'All Services';
     }
+    // For other categories, return as-is since they're already display names
+    return category;
   }
 }

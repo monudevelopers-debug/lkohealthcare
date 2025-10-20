@@ -17,7 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-import { getProviderProfile, updateProviderProfile } from '../services/api';
+import { getProviderProfile, updateProviderProfile, updateAvailability } from '../services/api';
 
 const Profile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +40,16 @@ const Profile: React.FC = () => {
       onSuccess: () => {
         queryClient.invalidateQueries('provider-profile');
         setIsEditing(false);
+      },
+    }
+  );
+
+  // Update availability mutation
+  const updateAvailabilityMutation = useMutation(
+    (isAvailable: boolean) => updateAvailability(isAvailable),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('provider-profile');
       },
     }
   );
@@ -86,6 +96,12 @@ const Profile: React.FC = () => {
       specializations: formData.get('specializations')?.toString().split(',').map(s => s.trim()),
     };
     updateProfileMutation.mutate(profileData);
+  };
+
+  const handleAvailabilityToggle = () => {
+    if (profile) {
+      updateAvailabilityMutation.mutate(!profile.isAvailable);
+    }
   };
 
   if (isLoading) {
@@ -180,14 +196,31 @@ const Profile: React.FC = () => {
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Status</h3>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                profile?.isAvailable 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
-                {profile?.isAvailable ? 'Available' : 'Unavailable'}
-              </span>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Availability Status</h3>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  profile?.isAvailable 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {profile?.isAvailable ? 'Available' : 'Unavailable'}
+                </span>
+                <button
+                  onClick={handleAvailabilityToggle}
+                  disabled={updateAvailabilityMutation.isLoading}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                    profile?.isAvailable
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200 disabled:bg-red-50'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200 disabled:bg-green-50'
+                  } disabled:cursor-not-allowed`}
+                >
+                  {updateAvailabilityMutation.isLoading 
+                    ? 'Updating...' 
+                    : (profile?.isAvailable ? 'Go Offline' : 'Go Online')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

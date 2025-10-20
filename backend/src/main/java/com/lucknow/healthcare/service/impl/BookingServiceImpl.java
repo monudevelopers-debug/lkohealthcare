@@ -107,7 +107,34 @@ public class BookingServiceImpl implements BookingService {
         }
         
         Booking booking = bookingOpt.get();
+        BookingStatus oldStatus = booking.getStatus();
         booking.setStatus(status);
+        
+        // AUTO-UPDATE PROVIDER STATUS based on booking status
+        if (booking.getProvider() != null) {
+            Provider provider = booking.getProvider();
+            
+            // When service starts (IN_PROGRESS), set provider to BUSY
+            if (status == BookingStatus.IN_PROGRESS) {
+                providerService.updateProviderAvailability(provider.getId(), com.lucknow.healthcare.enums.AvailabilityStatus.BUSY);
+                System.out.println("Provider " + provider.getName() + " auto-set to BUSY (booking started)");
+            }
+            
+            // When service completes or cancels, check if provider should return to AVAILABLE
+            if (status == BookingStatus.COMPLETED || status == BookingStatus.CANCELLED) {
+                // Check if provider has other IN_PROGRESS bookings
+                List<Booking> otherInProgressBookings = bookingRepository.findByProviderAndStatus(
+                    provider, 
+                    BookingStatus.IN_PROGRESS
+                );
+                
+                // If no other active bookings, set back to AVAILABLE
+                if (otherInProgressBookings.isEmpty()) {
+                    providerService.updateProviderAvailability(provider.getId(), com.lucknow.healthcare.enums.AvailabilityStatus.AVAILABLE);
+                    System.out.println("Provider " + provider.getName() + " auto-set to AVAILABLE (all bookings completed)");
+                }
+            }
+        }
         
         return bookingRepository.save(booking);
     }
@@ -144,8 +171,51 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalArgumentException("Provider not found with ID: " + provider.getId());
         }
         
+        Provider actualProvider = providerOpt.get();
         Booking booking = bookingOpt.get();
-        booking.setProvider(provider);
+        
+        // BUSINESS RULE 1: Provider must be AVAILABLE (not BUSY, OFF_DUTY, or ON_LEAVE)
+        if (actualProvider.getAvailabilityStatus() != com.lucknow.healthcare.enums.AvailabilityStatus.AVAILABLE) {
+            throw new IllegalStateException(
+                "Provider " + actualProvider.getName() + " is currently " + 
+                actualProvider.getAvailabilityStatus() + ". Only AVAILABLE providers can be assigned."
+            );
+        }
+        
+        // BUSINESS RULE 2: Check for time conflicts with existing bookings
+        LocalDate bookingDate = booking.getScheduledDate();
+        LocalTime bookingStartTime = booking.getScheduledTime();
+        LocalTime bookingEndTime = bookingStartTime.plusHours(booking.getDuration());
+        
+        // Get all CONFIRMED or IN_PROGRESS bookings for this provider on the same date
+        List<Booking> providerBookings = bookingRepository.findByProviderAndStatusIn(
+            actualProvider,
+            List.of(BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS)
+        ).stream()
+        .filter(b -> b.getScheduledDate().equals(bookingDate))
+        .toList();
+        
+        // Check for time overlap
+        for (Booking existingBooking : providerBookings) {
+            LocalTime existingStart = existingBooking.getScheduledTime();
+            LocalTime existingEnd = existingStart.plusHours(existingBooking.getDuration());
+            
+            // Check if times overlap
+            boolean overlap = !(bookingEndTime.isBefore(existingStart) || bookingStartTime.isAfter(existingEnd));
+            
+            if (overlap) {
+                throw new IllegalStateException(
+                    "Time conflict! Provider " + actualProvider.getName() + 
+                    " already has a booking from " + existingStart + " to " + existingEnd + 
+                    " on " + bookingDate
+                );
+            }
+        }
+        
+        // All validations passed - assign provider
+        booking.setProvider(actualProvider);
+        
+        System.out.println("Provider " + actualProvider.getName() + " assigned to booking " + booking.getId());
         
         return bookingRepository.save(booking);
     }

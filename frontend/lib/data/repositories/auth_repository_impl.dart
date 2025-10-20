@@ -1,10 +1,10 @@
 import 'package:dartz/dartz.dart';
-import '../../domain/entities/user.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../../core/error/failures.dart';
-import '../datasources/remote/auth_remote_datasource.dart';
-import '../datasources/local/auth_local_datasource.dart';
-import '../../core/network/network_info.dart';
+import 'package:lucknow_healthcare/domain/entities/user.dart';
+import 'package:lucknow_healthcare/domain/repositories/auth_repository.dart';
+import 'package:lucknow_healthcare/core/error/failures.dart';
+import 'package:lucknow_healthcare/data/datasources/remote/auth_remote_datasource.dart';
+import 'package:lucknow_healthcare/data/datasources/local/auth_local_datasource.dart';
+import 'package:lucknow_healthcare/core/network/network_info.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;

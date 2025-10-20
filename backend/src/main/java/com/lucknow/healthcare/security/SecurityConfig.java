@@ -56,17 +56,18 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/**", "/actuator/**").permitAll()
+                .requestMatchers("/auth/**", "/actuator/**", "/health/**").permitAll()
                 .requestMatchers("/users/register", "/users/authenticate", "/users/verify-email", 
                                "/users/reset-password-token", "/users/reset-password",
-                               "/service-categories/active", "/services/active", 
+                               "/users/email-exists/**").permitAll()
+                .requestMatchers("/service-categories/active", "/services/active", "/services",
                                "/providers/available-verified", "/providers/top-rated",
                                "/providers/available", "/providers/search", "/providers/search/qualification")
                 .permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/users/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/service-categories/**").hasAnyRole("ADMIN", "PROVIDER")
-                .requestMatchers("/services/**").hasAnyRole("ADMIN", "PROVIDER")
+                .requestMatchers("/services/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/providers/**").hasAnyRole("ADMIN", "PROVIDER")
                 .requestMatchers("/bookings/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/payments/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")

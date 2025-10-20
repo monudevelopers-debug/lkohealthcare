@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import '../entities/service.dart';
-import '../../core/error/failures.dart';
+import 'package:lucknow_healthcare/domain/entities/service.dart';
+import 'package:lucknow_healthcare/core/error/failures.dart';
 
 abstract class ServiceRepository {
   Future<Either<Failure, List<Service>>> getServices();

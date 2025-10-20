@@ -47,8 +47,10 @@ export interface Provider {
   qualifications: string;
   experience: number;
   rating: number;
-  isAvailable: boolean;
-  services: Service[];
+  availabilityStatus: 'AVAILABLE' | 'BUSY' | 'OFF_DUTY' | 'ON_LEAVE';
+  isAvailable: boolean; // Computed from availabilityStatus
+  isVerified: boolean;
+  services?: Service[];
   createdAt: string;
   updatedAt: string;
 }
@@ -224,15 +226,27 @@ class ApiClient {
     return response.data;
   }
 
+  async updateUser(id: string, user: User): Promise<User> {
+    const response: AxiosResponse<User> = await this.client.put(`/users/${id}`, user);
+    return response.data;
+  }
+
   // Service management
   async getServices(page = 0, size = 20, categoryId?: string): Promise<{ content: Service[]; totalElements: number }> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      size: size.toString(),
-      ...(categoryId && { categoryId }),
-    });
-    const response = await this.client.get(`/services?${params}`);
-    return response.data;
+    try {
+      // For admin, get all services (not just active)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: size.toString(),
+      });
+      const response = await this.client.get(`/services/page?${params}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      // Fallback to active services endpoint
+      const response = await this.client.get(`/services/active`);
+      return { content: response.data, totalElements: response.data.length };
+    }
   }
 
   async getServiceById(id: string): Promise<Service> {
@@ -267,13 +281,19 @@ class ApiClient {
 
   // Provider management
   async getProviders(page = 0, size = 20, search?: string): Promise<{ content: Provider[]; totalElements: number }> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      size: size.toString(),
-      ...(search && { search }),
-    });
-    const response = await this.client.get(`/providers?${params}`);
-    return response.data;
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: size.toString(),
+      });
+      const response = await this.client.get(`/providers/page?${params}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching providers:', error);
+      // Fallback to get all providers
+      const response = await this.client.get(`/providers`);
+      return { content: response.data, totalElements: response.data.length };
+    }
   }
 
   async getProviderById(id: string): Promise<Provider> {
@@ -281,8 +301,15 @@ class ApiClient {
     return response.data;
   }
 
-  async updateProviderStatus(id: string, isAvailable: boolean): Promise<Provider> {
-    const response: AxiosResponse<Provider> = await this.client.patch(`/providers/${id}/availability`, { isAvailable });
+  async updateProviderStatus(id: string, isAvailable: boolean, status?: 'AVAILABLE' | 'BUSY' | 'OFF_DUTY' | 'ON_LEAVE'): Promise<Provider> {
+    // Backend expects AvailabilityStatus enum (AVAILABLE, BUSY, OFF_DUTY, ON_LEAVE)
+    const availabilityStatus = status || (isAvailable ? 'AVAILABLE' : 'OFF_DUTY');
+    const response: AxiosResponse<Provider> = await this.client.put(`/providers/${id}/availability?availabilityStatus=${availabilityStatus}`);
+    return response.data;
+  }
+
+  async updateProvider(id: string, provider: Provider): Promise<Provider> {
+    const response: AxiosResponse<Provider> = await this.client.put(`/providers/${id}`, provider);
     return response.data;
   }
 
@@ -308,7 +335,7 @@ class ApiClient {
   }
 
   async assignProvider(bookingId: string, providerId: string): Promise<Booking> {
-    const response: AxiosResponse<Booking> = await this.client.patch(`/bookings/${bookingId}/assign`, { providerId });
+    const response: AxiosResponse<Booking> = await this.client.put(`/bookings/${bookingId}/assign-provider?providerId=${providerId}`);
     return response.data;
   }
 
@@ -429,6 +456,7 @@ export const getUsers = apiClient.getUsers.bind(apiClient);
 export const getUserById = apiClient.getUserById.bind(apiClient);
 export const updateUserStatus = apiClient.updateUserStatus.bind(apiClient);
 export const updateUserRole = apiClient.updateUserRole.bind(apiClient);
+export const updateUser = apiClient.updateUser.bind(apiClient);
 export const getServices = apiClient.getServices.bind(apiClient);
 export const getServiceById = apiClient.getServiceById.bind(apiClient);
 export const createService = apiClient.createService.bind(apiClient);
@@ -439,6 +467,7 @@ export const createServiceCategory = apiClient.createServiceCategory.bind(apiCli
 export const getProviders = apiClient.getProviders.bind(apiClient);
 export const getProviderById = apiClient.getProviderById.bind(apiClient);
 export const updateProviderStatus = apiClient.updateProviderStatus.bind(apiClient);
+export const updateProvider = apiClient.updateProvider.bind(apiClient);
 export const getBookings = apiClient.getBookings.bind(apiClient);
 export const getBookingById = apiClient.getBookingById.bind(apiClient);
 export const updateBookingStatus = apiClient.updateBookingStatus.bind(apiClient);

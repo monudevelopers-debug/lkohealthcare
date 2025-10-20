@@ -139,7 +139,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 // Role Selection
                 DropdownButtonFormField<String>(
-                  value: _selectedRole,
+                  initialValue: _selectedRole,
                   decoration: const InputDecoration(
                     labelText: 'Account Type',
                     prefixIcon: Icon(Icons.work),

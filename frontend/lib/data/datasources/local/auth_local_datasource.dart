@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
-import '../../domain/entities/user.dart';
+import 'package:lucknow_healthcare/domain/entities/user.dart';
 
 abstract class AuthLocalDataSource {
   Future<User?> getCachedUser();

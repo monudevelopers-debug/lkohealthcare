@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import '../entities/booking.dart';
-import '../../core/error/failures.dart';
+import 'package:lucknow_healthcare/domain/entities/booking.dart';
+import 'package:lucknow_healthcare/core/error/failures.dart';
 
 abstract class OrderRepository {
   Future<Either<Failure, List<Booking>>> getBookings();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../bloc/order/order_bloc.dart';
+import '../../bloc/auth/auth_bloc.dart';
 import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/error_widget.dart';
 import '../../widgets/order/booking_card.dart';
@@ -21,13 +22,20 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    context.read<OrderBloc>().add(LoadBookings());
+    _loadBookings();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _loadBookings() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthSuccess) {
+      context.read<OrderBloc>().add(LoadBookingsByUser(userId: authState.user.id!));
+    }
   }
 
   @override
@@ -71,9 +79,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<OrderBloc>().add(LoadBookings());
-            },
+            onPressed: _loadBookings,
           ),
         ],
       ),
@@ -102,11 +108,9 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         if (state is OrderLoading) {
           return const LoadingWidget();
         } else if (state is OrderFailure) {
-          return ErrorWidget(
+          return CustomErrorWidget(
             message: state.message,
-            onRetry: () {
-              context.read<OrderBloc>().add(LoadBookings());
-            },
+            onRetry: _loadBookings,
           );
         } else if (state is OrderSuccess) {
           if (state.bookings.isEmpty) {
@@ -115,7 +119,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
 
           return RefreshIndicator(
             onRefresh: () async {
-              context.read<OrderBloc>().add(LoadBookings());
+              _loadBookings();
             },
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -240,9 +244,9 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               const SizedBox(height: 20),
               
               // Booking details
-              Text(
+              const Text(
                 'Booking Details',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),

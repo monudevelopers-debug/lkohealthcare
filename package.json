@@ -1,0 +1,27 @@
+{
+  "name": "lko",
+  "version": "1.0.0",
+  "description": "A comprehensive healthcare services platform enabling customers to book nursing, elderly care, physiotherapy, child care, and ambulance services through a cross-platform mobile application and web dashboards.",
+  "main": "run-admin-dashboard-tests.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monudevelopers-debug/lkohealthcare.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/monudevelopers-debug/lkohealthcare/issues"
+  },
+  "homepage": "https://github.com/monudevelopers-debug/lkohealthcare#readme",
+  "dependencies": {
+    "node-fetch": "^2.7.0",
+    "playwright": "^1.56.1"
+  }
+}

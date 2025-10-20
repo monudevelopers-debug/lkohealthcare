@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../domain/repositories/order_repository.dart';
-import '../../../domain/entities/booking.dart';
+import 'package:lucknow_healthcare/domain/repositories/order_repository.dart';
+import 'package:lucknow_healthcare/domain/entities/booking.dart';
 
 // Events
 abstract class OrderEvent extends Equatable {

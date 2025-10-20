@@ -32,12 +32,12 @@ class ServiceCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _getServiceColor(service.category).withOpacity(0.1),
+                  color: _getServiceColor(service.categoryName).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  _getServiceIcon(service.category),
-                  color: _getServiceColor(service.category),
+                  _getServiceIcon(service.categoryName),
+                  color: _getServiceColor(service.categoryName),
                   size: 24,
                 ),
               ),
@@ -131,36 +131,36 @@ class ServiceCard extends StatelessWidget {
   }
 
   Color _getServiceColor(String? category) {
-    switch (category?.toUpperCase()) {
-      case 'NURSING':
-        return Colors.blue;
-      case 'ELDERLY':
-        return Colors.orange;
-      case 'PHYSIOTHERAPY':
-        return Colors.green;
-      case 'CHILD_CARE':
-        return Colors.purple;
-      case 'AMBULANCE':
-        return Colors.red;
-      default:
-        return Colors.grey;
+    final cat = category?.toUpperCase() ?? '';
+    if (cat.contains('NURSING')) {
+      return Colors.blue;
+    } else if (cat.contains('ELDERLY')) {
+      return Colors.orange;
+    } else if (cat.contains('PHYSIO')) {
+      return Colors.green;
+    } else if (cat.contains('CHILD')) {
+      return Colors.purple;
+    } else if (cat.contains('AMBULANCE')) {
+      return Colors.red;
+    } else {
+      return Colors.grey;
     }
   }
 
   IconData _getServiceIcon(String? category) {
-    switch (category?.toUpperCase()) {
-      case 'NURSING':
-        return Icons.health_and_safety;
-      case 'ELDERLY':
-        return Icons.elderly;
-      case 'PHYSIOTHERAPY':
-        return Icons.accessibility;
-      case 'CHILD_CARE':
-        return Icons.child_care;
-      case 'AMBULANCE':
-        return Icons.local_hospital;
-      default:
-        return Icons.medical_services;
+    final cat = category?.toUpperCase() ?? '';
+    if (cat.contains('NURSING')) {
+      return Icons.health_and_safety;
+    } else if (cat.contains('ELDERLY')) {
+      return Icons.elderly;
+    } else if (cat.contains('PHYSIO')) {
+      return Icons.accessibility;
+    } else if (cat.contains('CHILD')) {
+      return Icons.child_care;
+    } else if (cat.contains('AMBULANCE')) {
+      return Icons.local_hospital;
+    } else {
+      return Icons.medical_services;
     }
   }
 }

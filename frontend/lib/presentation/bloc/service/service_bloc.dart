@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../domain/repositories/service_repository.dart';
-import '../../../domain/entities/service.dart';
+import 'package:lucknow_healthcare/domain/repositories/service_repository.dart';
+import 'package:lucknow_healthcare/domain/entities/service.dart';
 
 // Events
 abstract class ServiceEvent extends Equatable {

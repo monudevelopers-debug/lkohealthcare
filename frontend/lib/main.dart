@@ -1,35 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
 
-import 'app.dart';
 import 'core/network/network_info.dart';
 import 'data/datasources/remote/auth_remote_datasource.dart';
+import 'data/datasources/remote/service_remote_datasource.dart';
+import 'data/datasources/remote/booking_remote_datasource.dart';
 import 'data/datasources/local/auth_local_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
+import 'data/repositories/service_repository_impl.dart';
+import 'data/repositories/booking_repository_impl.dart';
 import 'domain/repositories/auth_repository.dart';
+import 'domain/repositories/service_repository.dart';
+import 'domain/repositories/order_repository.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
-import 'presentation/bloc/order/order_bloc.dart';
 import 'presentation/bloc/service/service_bloc.dart';
+import 'presentation/bloc/order/order_bloc.dart';
+import 'presentation/routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize dependencies
   final sharedPreferences = await SharedPreferences.getInstance();
-  final secureStorage = const FlutterSecureStorage();
+  const secureStorage = FlutterSecureStorage();
   final connectivity = Connectivity();
   final dio = Dio();
   
   // Configure Dio
-  dio.options.baseUrl = 'http://localhost:8080';
+  dio.options.baseUrl = 'http://localhost:8080';  // Backend API base URL
   dio.options.connectTimeout = const Duration(seconds: 30);
   dio.options.receiveTimeout = const Duration(seconds: 30);
+  
+  // Add token interceptor
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        // Get token from secure storage
+        final token = await secureStorage.read(key: 'auth_token');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+      onError: (error, handler) {
+        // Handle token expiration
+        if (error.response?.statusCode == 401) {
+          // Token expired or invalid
+          secureStorage.delete(key: 'auth_token');
+        }
+        return handler.next(error);
+      },
+    ),
+  );
   
   // Initialize data sources
   final networkInfo = NetworkInfoImpl(connectivity: connectivity);
@@ -38,6 +65,8 @@ void main() async {
     sharedPreferences: sharedPreferences,
     secureStorage: secureStorage,
   );
+  final serviceRemoteDataSource = ServiceRemoteDataSourceImpl(dio: dio);
+  final bookingRemoteDataSource = BookingRemoteDataSourceImpl(dio: dio);
   
   // Initialize repositories
   final authRepository = AuthRepositoryImpl(
@@ -45,18 +74,32 @@ void main() async {
     localDataSource: authLocalDataSource,
     networkInfo: networkInfo,
   );
+  final serviceRepository = ServiceRepositoryImpl(
+    remoteDataSource: serviceRemoteDataSource,
+    networkInfo: networkInfo,
+  );
+  final orderRepository = BookingRepositoryImpl(
+    remoteDataSource: bookingRemoteDataSource,
+    networkInfo: networkInfo,
+  );
   
   runApp(LucknowHealthcareApp(
     authRepository: authRepository,
+    serviceRepository: serviceRepository,
+    orderRepository: orderRepository,
   ));
 }
 
 class LucknowHealthcareApp extends StatelessWidget {
   final AuthRepository authRepository;
+  final ServiceRepository serviceRepository;
+  final OrderRepository orderRepository;
   
   const LucknowHealthcareApp({
     super.key,
     required this.authRepository,
+    required this.serviceRepository,
+    required this.orderRepository,
   });
 
   @override
@@ -66,13 +109,12 @@ class LucknowHealthcareApp extends StatelessWidget {
         BlocProvider<AuthBloc>(
           create: (context) => AuthBloc(authRepository: authRepository),
         ),
-        // TODO: Add other BLoC providers when repositories are implemented
-        // BlocProvider<OrderBloc>(
-        //   create: (context) => OrderBloc(orderRepository: orderRepository),
-        // ),
-        // BlocProvider<ServiceBloc>(
-        //   create: (context) => ServiceBloc(serviceRepository: serviceRepository),
-        // ),
+        BlocProvider<ServiceBloc>(
+          create: (context) => ServiceBloc(serviceRepository: serviceRepository),
+        ),
+        BlocProvider<OrderBloc>(
+          create: (context) => OrderBloc(orderRepository: orderRepository),
+        ),
       ],
       child: MaterialApp.router(
         title: 'Lucknow Healthcare Services',

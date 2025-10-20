@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import '../entities/user.dart';
-import '../../core/error/failures.dart';
+import 'package:lucknow_healthcare/domain/entities/user.dart';
+import 'package:lucknow_healthcare/core/error/failures.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, User>> login({

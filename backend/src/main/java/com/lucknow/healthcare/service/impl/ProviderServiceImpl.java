@@ -1,8 +1,11 @@
 package com.lucknow.healthcare.service.impl;
 
 import com.lucknow.healthcare.entity.Provider;
+import com.lucknow.healthcare.entity.Booking;
 import com.lucknow.healthcare.enums.AvailabilityStatus;
+import com.lucknow.healthcare.enums.BookingStatus;
 import com.lucknow.healthcare.repository.ProviderRepository;
+import com.lucknow.healthcare.repository.BookingRepository;
 import com.lucknow.healthcare.service.interfaces.ProviderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,6 +34,9 @@ public class ProviderServiceImpl implements ProviderService {
     
     @Autowired
     private ProviderRepository providerRepository;
+    
+    @Autowired
+    private BookingRepository bookingRepository;
     
     @Override
     public Provider createProvider(Provider provider) {
@@ -78,7 +84,39 @@ public class ProviderServiceImpl implements ProviderService {
         }
         
         Provider provider = providerOpt.get();
-        provider.setAvailabilityStatus(availabilityStatus);
+        
+        // BUSINESS RULE: Cannot go offline/on-leave if provider has active or confirmed bookings
+        if (availabilityStatus != AvailabilityStatus.AVAILABLE && 
+            availabilityStatus != AvailabilityStatus.BUSY) {
+            
+            // Check for active bookings (CONFIRMED or IN_PROGRESS)
+            List<Booking> activeBookings = bookingRepository.findByProviderAndStatusIn(
+                provider, 
+                List.of(BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS)
+            );
+            
+            if (!activeBookings.isEmpty()) {
+                throw new IllegalStateException(
+                    "Cannot change status to " + availabilityStatus + 
+                    ". Provider has " + activeBookings.size() + 
+                    " active booking(s). Please complete or cancel them first."
+                );
+            }
+        }
+        
+        // AUTO-UPDATE LOGIC: If provider has IN_PROGRESS booking, force to BUSY
+        List<Booking> inProgressBookings = bookingRepository.findByProviderAndStatus(
+            provider, 
+            BookingStatus.IN_PROGRESS
+        );
+        
+        if (!inProgressBookings.isEmpty()) {
+            // Provider has active service in progress - must be BUSY
+            provider.setAvailabilityStatus(AvailabilityStatus.BUSY);
+            System.out.println("Provider " + provider.getName() + " auto-set to BUSY due to IN_PROGRESS booking");
+        } else {
+            provider.setAvailabilityStatus(availabilityStatus);
+        }
         
         return providerRepository.save(provider);
     }

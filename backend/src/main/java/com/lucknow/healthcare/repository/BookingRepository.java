@@ -122,6 +122,15 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByProviderAndStatus(Provider provider, BookingStatus status);
     
     /**
+     * Find bookings by provider and multiple statuses
+     * 
+     * @param provider the provider to filter by
+     * @param statuses the list of booking statuses to filter by
+     * @return List of bookings for the specified provider and statuses
+     */
+    List<Booking> findByProviderAndStatusIn(Provider provider, List<BookingStatus> statuses);
+    
+    /**
      * Find bookings by provider ID and status
      * 
      * @param providerId the provider ID to filter by
