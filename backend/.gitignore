@@ -1,0 +1,26 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+

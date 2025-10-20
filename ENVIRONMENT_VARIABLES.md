@@ -1,22 +1,47 @@
 # Environment Variables Configuration
 
-## Twilio SMS Configuration
+## Backend Configuration
 
-Set these environment variables before running the backend:
+**File:** `/backend/.env` (already created with Twilio credentials)
 
+The `.env` file is in `.gitignore` and contains:
+- Twilio Account SID
+- Twilio Auth Token  
+- Twilio Phone Number
+- Database credentials
+- JWT secret
+
+**Note:** The `.env` file is NOT committed to git for security.
+
+## Customer Portal Configuration
+
+**File:** `/customer-portal/.env.development` (already configured)
+
+Contains:
+- API URL
+- Firebase configuration
+- Twilio credentials
+- Company details
+
+**Note:** `.env.development` is also in `.gitignore`.
+
+## Running the Backend
+
+The backend will automatically load variables from `.env` file.
+
+Just run:
 ```bash
-export TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
-export TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
-export TWILIO_PHONE_NUMBER=your_twilio_phone_number_here
+cd backend
+java -jar target/healthcare-1.0.0.jar
 ```
 
-Or set them in your IDE run configuration.
+## For Production Deployment
 
-**Note:** Get your Twilio credentials from: https://console.twilio.com/
-
-## Customer Portal (.env.development)
-
-Located at: `/customer-portal/.env.development`
-
-Update this file with your actual Twilio credentials for frontend OTP functionality.
+Set environment variables in your hosting platform (e.g., Heroku, AWS, etc.):
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_PHONE_NUMBER`
+- `DB_URL`
+- `DB_USERNAME`
+- `DB_PASSWORD`
 
