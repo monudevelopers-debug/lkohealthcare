@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useService } from '../../lib/hooks/useServices';
 import { useCreateBooking } from '../../lib/hooks/useBookings';
 import { useAuth } from '../../lib/auth/AuthContext';
+import { patientsApi } from '../../lib/api/patients.api';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { formatCurrency } from '../../lib/utils/formatDate';
 import { validateLucknowAddress } from '../../lib/utils/addressValidation';
-import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, CheckIcon, User, Plus, AlertCircle } from '@heroicons/react/24/outline';
+import type { Patient } from '../../types/patient.types';
 
 export const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +20,14 @@ export const ServiceDetailPage = () => {
   const { data: service, isLoading } = useService(id!);
   const createBooking = useCreateBooking();
 
+  // Fetch patients
+  const { data: patients = [] } = useQuery({
+    queryKey: ['patients'],
+    queryFn: () => patientsApi.getPatients(),
+    enabled: isAuthenticated,
+  });
+
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [bookingData, setBookingData] = useState({
     scheduledDateTime: '',
     address: '',
@@ -48,6 +59,12 @@ export const ServiceDetailPage = () => {
       return;
     }
 
+    // Validate patient selection
+    if (!selectedPatientId) {
+      setError('Please select a patient for this booking');
+      return;
+    }
+
     // Validate address
     const addressValidation = validateLucknowAddress(bookingData.address);
     if (!addressValidation.valid) {
@@ -66,12 +83,13 @@ export const ServiceDetailPage = () => {
       // Calculate duration in hours (round up from minutes)
       const durationHours = Math.ceil(service.duration / 60);
       
-      // Combine address and notes
-      const specialInstructions = `Address: ${bookingData.address}${bookingData.notes ? `\n\nNotes: ${bookingData.notes}` : ''}`;
+      // Combine address and notes with patient info
+      const specialInstructions = `Patient ID: ${selectedPatientId}\nAddress: ${bookingData.address}${bookingData.notes ? `\n\nNotes: ${bookingData.notes}` : ''}`;
       
       await createBooking.mutateAsync({
         userId: user.id,
         serviceId: id!,
+        patientId: selectedPatientId, // Include patient ID
         scheduledDate: scheduledDate,
         scheduledTime: scheduledTime,
         duration: durationHours,
@@ -181,12 +199,79 @@ export const ServiceDetailPage = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Book This Service</h2>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                  {error}
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-700 text-sm">{error}</p>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Patient Selection - FIRST STEP */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Select Patient <span className="text-red-500">*</span>
+                  </label>
+                  
+                  {patients.length === 0 ? (
+                    // No patients - prompt to add
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                      <User className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600 mb-4">
+                        You need to add a patient before booking a service
+                      </p>
+                      <Button
+                        type="button"
+                        onClick={() => navigate('/patients')}
+                        className="mx-auto"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Patient
+                      </Button>
+                    </div>
+                  ) : (
+                    // Patient selector
+                    <div className="space-y-3">
+                      {patients.map((patient) => (
+                        <div
+                          key={patient.id}
+                          onClick={() => setSelectedPatientId(patient.id)}
+                          className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                            selectedPatientId === patient.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              selectedPatientId === patient.id ? 'bg-blue-500' : 'bg-gray-200'
+                            }`}>
+                              {selectedPatientId === patient.id ? (
+                                <CheckIcon className="w-6 h-6 text-white" />
+                              ) : (
+                                <User className="w-5 h-5 text-gray-500" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{patient.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {patient.age} years • {patient.gender} • {patient.relationshipToCustomer}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <button
+                        type="button"
+                        onClick={() => navigate('/patients')}
+                        className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                      >
+                        <Plus className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+                        <span className="text-sm text-gray-600">Add New Patient</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <Input
                   type="datetime-local"
                   label="Scheduled Date & Time"
