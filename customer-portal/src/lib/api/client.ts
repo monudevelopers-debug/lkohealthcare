@@ -38,13 +38,15 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      console.log('401 Unauthorized - Attempting token refresh...');
+      console.log('401 Unauthorized - API:', originalRequest.url);
+      console.log('401 Error Response:', error.response?.data);
       
       // Try to refresh token
       try {
         const auth = localStorage.getItem('lhc_auth');
         if (!auth) {
           console.log('No auth found in localStorage, redirecting to login');
+          localStorage.removeItem('lhc_auth');
           window.location.href = '/';
           return Promise.reject(error);
         }

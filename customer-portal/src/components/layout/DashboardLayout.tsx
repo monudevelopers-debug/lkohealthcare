@@ -160,7 +160,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Page content */}
-        <main className="p-4 lg:p-8">{children}</main>
+        <main className="p-4 lg:p-8 min-h-[calc(100vh-4rem)]">{children}</main>
+        
+        {/* Simple Footer */}
+        <footer className="border-t bg-white py-4 px-4 lg:px-8">
+          <div className="text-center text-sm text-gray-600">
+            <p>© {new Date().getFullYear()} Lucknow Healthcare. All rights reserved.</p>
+            <p className="mt-1">Developed with ❤️ by <span className="font-medium">Monu Developers</span></p>
+          </div>
+        </footer>
       </div>
     </div>
   );

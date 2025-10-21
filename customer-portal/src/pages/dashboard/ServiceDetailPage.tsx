@@ -10,7 +10,13 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { formatCurrency } from '../../lib/utils/formatDate';
 import { validateLucknowAddress } from '../../lib/utils/addressValidation';
-import { ArrowLeftIcon, CheckIcon, User, Plus, AlertCircle } from '@heroicons/react/24/outline';
+import { 
+  ArrowLeftIcon, 
+  CheckIcon, 
+  UserIcon, 
+  PlusIcon, 
+  ExclamationCircleIcon 
+} from '@heroicons/react/24/outline';
 import type { Patient } from '../../types/patient.types';
 
 export const ServiceDetailPage = () => {
@@ -200,7 +206,7 @@ export const ServiceDetailPage = () => {
 
               {error && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <ExclamationCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <p className="text-red-700 text-sm">{error}</p>
                 </div>
               )}
@@ -215,7 +221,7 @@ export const ServiceDetailPage = () => {
                   {patients.length === 0 ? (
                     // No patients - prompt to add
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <User className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <UserIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-600 mb-4">
                         You need to add a patient before booking a service
                       </p>
@@ -224,7 +230,7 @@ export const ServiceDetailPage = () => {
                         onClick={() => navigate('/patients')}
                         className="mx-auto"
                       >
-                        <Plus className="w-4 h-4 mr-2" />
+                        <PlusIcon className="w-4 h-4 mr-2" />
                         Add Patient
                       </Button>
                     </div>
@@ -248,7 +254,7 @@ export const ServiceDetailPage = () => {
                               {selectedPatientId === patient.id ? (
                                 <CheckIcon className="w-6 h-6 text-white" />
                               ) : (
-                                <User className="w-5 h-5 text-gray-500" />
+                                <UserIcon className="w-5 h-5 text-gray-500" />
                               )}
                             </div>
                             <div className="flex-1">
@@ -266,7 +272,7 @@ export const ServiceDetailPage = () => {
                         onClick={() => navigate('/patients')}
                         className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
                       >
-                        <Plus className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+                        <PlusIcon className="w-5 h-5 text-gray-400 mx-auto mb-1" />
                         <span className="text-sm text-gray-600">Add New Patient</span>
                       </button>
                     </div>

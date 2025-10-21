@@ -31,15 +31,32 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
         <Router>
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-grow">
-              <Routes>
-                {/* Public routes with Header/Footer */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/about" element={<div className="p-8 text-center">About Page Coming Soon</div>} />
-                <Route path="/contact" element={<div className="p-8 text-center">Contact Page Coming Soon</div>} />
-                <Route path="/debug" element={<DebugPage />} />
+          <Routes>
+            {/* Public routes with Header/Footer */}
+            <Route path="/" element={
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <main className="flex-grow">
+                  <LandingPage />
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/about" element={
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <main className="flex-grow p-8 text-center">About Page Coming Soon</main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/contact" element={
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <main className="flex-grow p-8 text-center">Contact Page Coming Soon</main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/debug" element={<DebugPage />} />
                 
                 {/* Protected routes with Sidebar Layout */}
                 <Route 
@@ -153,9 +170,6 @@ function App() {
                   } 
                 />
               </Routes>
-              </main>
-              <Footer />
-            </div>
           </Router>
         </AuthProvider>
       </QueryClientProvider>
