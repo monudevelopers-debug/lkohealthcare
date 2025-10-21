@@ -57,6 +57,11 @@ public class UserServiceImpl implements UserService {
         user.setEmailVerified(false);
         user.setEmailVerificationToken(generateToken());
         
+        // Ensure role is set (default to CUSTOMER if not provided)
+        if (user.getRole() == null) {
+            user.setRole(UserRole.CUSTOMER);
+        }
+        
         return userRepository.save(user);
     }
     
