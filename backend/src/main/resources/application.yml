@@ -75,9 +75,15 @@ jwt:
 
 # Payment Gateway Configuration
 payment:
+  gateway:
+    mode: ${PAYMENT_GATEWAY_MODE:DUMMY}  # DUMMY for development, RAZORPAY for production
+    dummy:
+      success-rate: ${DUMMY_PAYMENT_SUCCESS_RATE:90}  # 90% success rate
+      processing-time: ${DUMMY_PAYMENT_PROCESSING_TIME:2000}  # 2 seconds
   razorpay:
     key-id: ${RAZORPAY_KEY_ID:}
     key-secret: ${RAZORPAY_KEY_SECRET:}
+    webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
   stripe:
     publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
     secret-key: ${STRIPE_SECRET_KEY:}

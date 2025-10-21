@@ -1,10 +1,9 @@
 package com.lucknow.healthcare.entity;
 
-import com.lucknow.healthcare.enums.PaymentMethod;
-import com.lucknow.healthcare.enums.PaymentStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
@@ -12,22 +11,23 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Payment entity representing payment records (Phase 1.5)
+ * Payment entity representing payment transactions
  * 
- * This entity stores payment information including booking reference,
- * amount, method, status, and gateway transaction details.
+ * Tracks all payment operations including online payments, cash payments,
+ * refunds, and invoice generation.
  * 
  * @author Lucknow Healthcare Team
  * @version 1.0.0
  */
 @Entity
 @Table(name = "payments", indexes = {
-    @Index(name = "idx_payment_booking_id", columnList = "booking_id"),
-    @Index(name = "idx_payment_status", columnList = "status"),
-    @Index(name = "idx_payment_transaction_id", columnList = "transaction_id"),
-    @Index(name = "idx_payment_gateway", columnList = "payment_gateway"),
-    @Index(name = "idx_payment_created_at", columnList = "created_at"),
-    @Index(name = "idx_payment_paid_at", columnList = "paid_at")
+    @Index(name = "idx_payments_booking_id", columnList = "booking_id"),
+    @Index(name = "idx_payments_customer_id", columnList = "customer_id"),
+    @Index(name = "idx_payments_payment_status", columnList = "payment_status"),
+    @Index(name = "idx_payments_transaction_id", columnList = "transaction_id"),
+    @Index(name = "idx_payments_invoice_number", columnList = "invoice_number"),
+    @Index(name = "idx_payments_created_at", columnList = "created_at"),
+    @Index(name = "idx_payments_customer_status", columnList = "customer_id, payment_status")
 })
 @EntityListeners(AuditingEntityListener.class)
 public class Payment {
@@ -37,71 +37,122 @@ public class Payment {
     private UUID id;
     
     @NotNull(message = "Booking is required")
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", nullable = false)
     private Booking booking;
     
+    @NotNull(message = "Customer is required")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
+    private User customer;
+    
     @NotNull(message = "Amount is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Amount must be greater than 0")
+    @DecimalMin(value = "0.0", message = "Amount must be positive")
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentMethod method;
+    @NotBlank(message = "Payment method is required")
+    @Column(name = "payment_method", nullable = false, length = 50)
+    private String paymentMethod; // CARD, UPI, CASH, WALLET, ONLINE
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentStatus status = PaymentStatus.PENDING;
+    @Column(name = "payment_gateway", length = 50)
+    private String paymentGateway; // DUMMY, RAZORPAY, STRIPE
     
-    @Size(max = 255, message = "Transaction ID must not exceed 255 characters")
-    @Column(length = 255)
+    @Column(name = "transaction_id")
     private String transactionId;
     
-    @Size(max = 50, message = "Payment gateway must not exceed 50 characters")
-    @Column(length = 50)
-    private String paymentGateway;
+    @Column(name = "gateway_order_id")
+    private String gatewayOrderId; // Razorpay order_id, Stripe payment_intent
     
-    @Column(columnDefinition = "JSONB")
-    private String gatewayResponse; // Store gateway response data as JSON
+    @NotNull(message = "Payment status is required")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false, length = 20)
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
     
+    @NotNull(message = "Payment timing is required")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_timing", nullable = false, length = 20)
+    private PaymentTiming paymentTiming;
+    
+    @Column(name = "invoice_number", unique = true, length = 50)
+    private String invoiceNumber;
+    
+    @Column(name = "invoice_url", columnDefinition = "TEXT")
+    private String invoiceUrl;
+    
+    @Column(name = "paid_at")
     private LocalDateTime paidAt;
     
+    @Column(name = "failure_reason", columnDefinition = "TEXT")
+    private String failureReason;
+    
+    @Column(name = "gateway_response", columnDefinition = "TEXT")
+    private String gatewayResponse; // Store full JSON response for debugging
+    
     @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    // Enums
+    
+    public enum PaymentStatus {
+        PENDING, PROCESSING, SUCCESS, FAILED, REFUNDED, PARTIALLY_REFUNDED
+    }
+    
+    public enum PaymentTiming {
+        ADVANCE, POST_SERVICE
+    }
+    
     // Constructors
+    
     public Payment() {}
     
-    public Payment(Booking booking, BigDecimal amount, PaymentMethod method) {
+    public Payment(Booking booking, User customer, BigDecimal amount, 
+                  String paymentMethod, PaymentTiming paymentTiming) {
         this.booking = booking;
+        this.customer = customer;
         this.amount = amount;
-        this.method = method;
+        this.paymentMethod = paymentMethod;
+        this.paymentTiming = paymentTiming;
     }
     
     // Business methods
-    public boolean processRefund(BigDecimal refundAmount) {
-        if (status == PaymentStatus.PAID && refundAmount.compareTo(BigDecimal.ZERO) > 0 && 
-            refundAmount.compareTo(amount) <= 0) {
-            if (refundAmount.equals(amount)) {
-                status = PaymentStatus.REFUNDED;
-            } else {
-                status = PaymentStatus.PARTIAL_REFUND;
-            }
-            return true;
-        }
-        return false;
+    
+    public boolean isSuccessful() {
+        return paymentStatus == PaymentStatus.SUCCESS;
     }
     
-    public String generateInvoice() {
-        // Generate invoice number based on booking ID and timestamp
-        return String.format("INV-%s-%d", 
-            booking.getId().toString().substring(0, 8).toUpperCase(),
-            System.currentTimeMillis() % 10000);
+    public boolean isPending() {
+        return paymentStatus == PaymentStatus.PENDING || paymentStatus == PaymentStatus.PROCESSING;
+    }
+    
+    public boolean canBeRefunded() {
+        return paymentStatus == PaymentStatus.SUCCESS || paymentStatus == PaymentStatus.PARTIALLY_REFUNDED;
+    }
+    
+    public void markAsSuccess(String transactionId) {
+        this.transactionId = transactionId;
+        this.paymentStatus = PaymentStatus.SUCCESS;
+        this.paidAt = LocalDateTime.now();
+    }
+    
+    public void markAsFailed(String reason) {
+        this.paymentStatus = PaymentStatus.FAILED;
+        this.failureReason = reason;
+    }
+    
+    public void generateInvoiceNumber() {
+        if (invoiceNumber == null && paymentStatus == PaymentStatus.SUCCESS) {
+            this.invoiceNumber = "INV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
     }
     
     // Getters and Setters
+    
     public UUID getId() {
         return id;
     }
@@ -118,6 +169,14 @@ public class Payment {
         this.booking = booking;
     }
     
+    public User getCustomer() {
+        return customer;
+    }
+    
+    public void setCustomer(User customer) {
+        this.customer = customer;
+    }
+    
     public BigDecimal getAmount() {
         return amount;
     }
@@ -126,28 +185,12 @@ public class Payment {
         this.amount = amount;
     }
     
-    public PaymentMethod getMethod() {
-        return method;
+    public String getPaymentMethod() {
+        return paymentMethod;
     }
     
-    public void setMethod(PaymentMethod method) {
-        this.method = method;
-    }
-    
-    public PaymentStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(PaymentStatus status) {
-        this.status = status;
-    }
-    
-    public String getTransactionId() {
-        return transactionId;
-    }
-    
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
     
     public String getPaymentGateway() {
@@ -158,12 +201,52 @@ public class Payment {
         this.paymentGateway = paymentGateway;
     }
     
-    public String getGatewayResponse() {
-        return gatewayResponse;
+    public String getTransactionId() {
+        return transactionId;
     }
     
-    public void setGatewayResponse(String gatewayResponse) {
-        this.gatewayResponse = gatewayResponse;
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+    
+    public String getGatewayOrderId() {
+        return gatewayOrderId;
+    }
+    
+    public void setGatewayOrderId(String gatewayOrderId) {
+        this.gatewayOrderId = gatewayOrderId;
+    }
+    
+    public PaymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
+    
+    public void setPaymentStatus(PaymentStatus paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+    
+    public PaymentTiming getPaymentTiming() {
+        return paymentTiming;
+    }
+    
+    public void setPaymentTiming(PaymentTiming paymentTiming) {
+        this.paymentTiming = paymentTiming;
+    }
+    
+    public String getInvoiceNumber() {
+        return invoiceNumber;
+    }
+    
+    public void setInvoiceNumber(String invoiceNumber) {
+        this.invoiceNumber = invoiceNumber;
+    }
+    
+    public String getInvoiceUrl() {
+        return invoiceUrl;
+    }
+    
+    public void setInvoiceUrl(String invoiceUrl) {
+        this.invoiceUrl = invoiceUrl;
     }
     
     public LocalDateTime getPaidAt() {
@@ -174,11 +257,35 @@ public class Payment {
         this.paidAt = paidAt;
     }
     
+    public String getFailureReason() {
+        return failureReason;
+    }
+    
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+    
+    public String getGatewayResponse() {
+        return gatewayResponse;
+    }
+    
+    public void setGatewayResponse(String gatewayResponse) {
+        this.gatewayResponse = gatewayResponse;
+    }
+    
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
     
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+    
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
