@@ -2,6 +2,7 @@ package com.lucknow.healthcare.controller;
 
 import com.lucknow.healthcare.entity.Patient;
 import com.lucknow.healthcare.service.interfaces.PatientService;
+import com.lucknow.healthcare.util.SecurityUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -10,8 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,7 +36,7 @@ public class PatientController {
     @PostMapping
     public ResponseEntity<?> createPatient(@Valid @RequestBody Patient patient) {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             Patient createdPatient = patientService.createPatient(patient, customerId);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdPatient);
         } catch (Exception e) {
@@ -53,7 +52,7 @@ public class PatientController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             
             if (page == -1) {
                 // Return all patients without pagination
@@ -77,7 +76,7 @@ public class PatientController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getPatientById(@PathVariable UUID id) {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             return patientService.getPatientById(id, customerId)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
@@ -95,7 +94,7 @@ public class PatientController {
             @PathVariable UUID id,
             @Valid @RequestBody Patient patient) {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             Patient updatedPatient = patientService.updatePatient(id, patient, customerId);
             return ResponseEntity.ok(updatedPatient);
         } catch (IllegalArgumentException e) {
@@ -111,7 +110,7 @@ public class PatientController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePatient(@PathVariable UUID id) {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             boolean deleted = patientService.deletePatient(id, customerId);
             
             if (deleted) {
@@ -134,7 +133,7 @@ public class PatientController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             Pageable pageable = PageRequest.of(page, size);
             Page<Patient> patients = patientService.searchPatients(customerId, name, pageable);
             return ResponseEntity.ok(patients);
@@ -150,7 +149,7 @@ public class PatientController {
     @GetMapping("/with-conditions")
     public ResponseEntity<?> getPatientsWithConditions() {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             List<Patient> patients = patientService.getPatientsWithMedicalConditions(customerId);
             return ResponseEntity.ok(patients);
         } catch (Exception e) {
@@ -165,7 +164,7 @@ public class PatientController {
     @GetMapping("/minors")
     public ResponseEntity<?> getMinorPatients() {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             List<Patient> patients = patientService.getMinorPatients(customerId);
             return ResponseEntity.ok(patients);
         } catch (Exception e) {
@@ -180,27 +179,13 @@ public class PatientController {
     @GetMapping("/count")
     public ResponseEntity<?> getPatientCount() {
         try {
-            UUID customerId = getCurrentUserId();
+            UUID customerId = SecurityUtils.getCurrentUserId();
             long count = patientService.countActivePatients(customerId);
             return ResponseEntity.ok(new CountResponse(count));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error counting patients: " + e.getMessage());
         }
-    }
-    
-    // Helper methods
-    
-    private UUID getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new SecurityException("User not authenticated");
-        }
-        // Assuming user email is the principal
-        String email = authentication.getName();
-        // You'll need to fetch user by email and get UUID
-        // For now, this is a placeholder - implement based on your UserRepository
-        return UUID.randomUUID(); // TODO: Replace with actual user ID lookup
     }
     
     // Response classes
