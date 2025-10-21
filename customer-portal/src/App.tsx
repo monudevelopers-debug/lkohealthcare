@@ -4,10 +4,13 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './lib/auth/AuthContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
+import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LandingPage } from './pages/landing/LandingPage';
+import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { ServicesPage } from './pages/dashboard/ServicesPage';
 import { ServiceDetailPage } from './pages/dashboard/ServiceDetailPage';
+import { PatientsPage } from './pages/dashboard/PatientsPage';
 import { BookingsPage } from './pages/dashboard/BookingsPage';
 import { ProfilePage } from './pages/dashboard/ProfilePage';
 import { DebugPage } from './pages/dashboard/DebugPage';
@@ -32,28 +35,123 @@ function App() {
             <Header />
             <main className="flex-grow">
               <Routes>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/services" element={<ServicesPage />} />
-                  <Route path="/services/:id" element={<ServiceDetailPage />} />
-                  <Route 
-                    path="/bookings" 
-                    element={
-                      <ProtectedRoute>
-                        <BookingsPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/profile" 
-                    element={
-                      <ProtectedRoute>
-                        <ProfilePage />
-                      </ProtectedRoute>
-                    } 
-                  />
+                {/* Public routes with Header/Footer */}
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/about" element={<div className="p-8 text-center">About Page Coming Soon</div>} />
                 <Route path="/contact" element={<div className="p-8 text-center">Contact Page Coming Soon</div>} />
                 <Route path="/debug" element={<DebugPage />} />
+                
+                {/* Protected routes with Sidebar Layout */}
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <DashboardPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/services" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <ServicesPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/services/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <ServiceDetailPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/patients" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <PatientsPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/bookings" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <BookingsPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <ProfilePage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/payments" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <div className="p-8 text-center">Payment History Coming Soon</div>
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/reviews" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <div className="p-8 text-center">My Reviews Coming Soon</div>
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/blogs" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <div className="p-8 text-center">Blogs Coming Soon</div>
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/faq" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <div className="p-8 text-center">FAQ Coming Soon</div>
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/settings" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <div className="p-8 text-center">Settings Coming Soon</div>
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  } 
+                />
               </Routes>
               </main>
               <Footer />
