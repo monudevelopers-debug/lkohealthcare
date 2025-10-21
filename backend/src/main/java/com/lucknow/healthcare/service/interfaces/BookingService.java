@@ -385,6 +385,13 @@ public interface BookingService {
     boolean deleteBooking(UUID id);
     
     /**
+     * Find unassigned bookings (no provider assigned)
+     * 
+     * @return List of bookings without providers
+     */
+    List<Booking> findUnassignedBookings();
+    
+    /**
      * Count all bookings
      * 
      * @return the total number of bookings

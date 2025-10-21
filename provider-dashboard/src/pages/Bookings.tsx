@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Calendar, 
@@ -13,7 +13,10 @@ import {
   XCircle,
   AlertCircle,
   Play,
-  Square
+  Square,
+  Eye,
+  DollarSign,
+  FileText
 } from 'lucide-react';
 
 import { getMyBookings, updateBookingStatus, acceptBooking, rejectBooking, startService, completeService } from '../services/api';
@@ -24,7 +27,10 @@ const Bookings: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showActionModal, setShowActionModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [actionType, setActionType] = useState<'accept' | 'reject' | 'start' | 'complete'>('accept');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number; right: number }>({ right: 0 });
   
   const queryClient = useQueryClient();
 
@@ -98,12 +104,73 @@ const Bookings: React.FC = () => {
     }
   );
 
-  const bookings = bookingsData?.content || [];
-  const filteredBookings = bookings.filter(booking =>
-    booking.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    booking.service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    booking.id.toLowerCase().includes(searchTerm.toLowerCase())
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (openMenuId) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMenuId]);
+
+  const handleMenuClick = (bookingId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (openMenuId === bookingId) {
+      setOpenMenuId(null);
+      return;
+    }
+
+    const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
+    const menuHeight = 200;
+
+    let position;
+    if (spaceBelow >= menuHeight || spaceBelow > spaceAbove) {
+      position = {
+        top: buttonRect.bottom + 5,
+        right: window.innerWidth - buttonRect.right
+      };
+    } else if (spaceAbove >= menuHeight) {
+      position = {
+        bottom: viewportHeight - buttonRect.top + 5,
+        right: window.innerWidth - buttonRect.right
+      };
+    } else {
+      const idealTop = Math.max(10, Math.min(buttonRect.bottom, viewportHeight - menuHeight - 10));
+      position = {
+        top: idealTop,
+        right: window.innerWidth - buttonRect.right
+      };
+    }
+
+    setMenuPosition(position);
+    setOpenMenuId(bookingId);
+  };
+
+  // Filter to show only active bookings (PENDING, CONFIRMED, IN_PROGRESS)
+  const activeBookings = (bookingsData?.content || []).filter((booking: Booking) => 
+    booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'IN_PROGRESS'
   );
+  
+  const filteredBookings = activeBookings.filter(booking => {
+    // Apply search filter
+    const matchesSearch = 
+      booking.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Apply status filter
+    const matchesStatus = statusFilter === 'ALL' || booking.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -157,8 +224,11 @@ const Bookings: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
-          <p className="text-gray-600">Manage your assigned healthcare service bookings</p>
+          <h1 className="text-2xl font-bold text-gray-900">Manage Bookings</h1>
+          <p className="text-gray-600">Manage your active bookings (PENDING, CONFIRMED, IN_PROGRESS)</p>
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Full customer contact details available only for CONFIRMED/IN_PROGRESS bookings
+          </p>
         </div>
       </div>
 
@@ -183,12 +253,10 @@ const Bookings: React.FC = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="ALL">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
+              <option value="ALL">All Active</option>
+              <option value="PENDING">Pending (Need Action)</option>
+              <option value="CONFIRMED">Confirmed (Accepted)</option>
               <option value="IN_PROGRESS">In Progress</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
             </select>
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
               <Filter className="w-4 h-4" />
@@ -331,9 +399,89 @@ const Bookings: React.FC = () => {
                             Complete
                           </button>
                         )}
-                        <button className="text-gray-600 hover:text-gray-900">
+                        <button 
+                          onClick={(e) => handleMenuClick(booking.id, e)}
+                          className="text-gray-600 hover:text-gray-900 relative"
+                        >
                           <MoreVertical className="w-4 h-4" />
                         </button>
+                        {openMenuId === booking.id && (
+                          <div
+                            className="fixed w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[9999]"
+                            style={{
+                              top: menuPosition.top ? `${menuPosition.top}px` : undefined,
+                              bottom: menuPosition.bottom ? `${menuPosition.bottom}px` : undefined,
+                              right: `${menuPosition.right}px`
+                            }}
+                          >
+                            {booking.status === 'PENDING' && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setOpenMenuId(null);
+                                    handleBookingAction(booking.id, 'accept');
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                >
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                  Accept Booking
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setOpenMenuId(null);
+                                    handleBookingAction(booking.id, 'reject');
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                >
+                                  <XCircle className="w-4 h-4 text-red-600" />
+                                  Reject Booking
+                                </button>
+                              </>
+                            )}
+                            {booking.status === 'CONFIRMED' && (
+                              <button
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  handleBookingAction(booking.id, 'start');
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <Play className="w-4 h-4 text-blue-600" />
+                                Start Service
+                              </button>
+                            )}
+                            {booking.status === 'IN_PROGRESS' && (
+                              <button
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  handleBookingAction(booking.id, 'complete');
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <Square className="w-4 h-4 text-green-600" />
+                                Complete Service
+                              </button>
+                            )}
+                            {/* View Customer Details - Only for active bookings (CONFIRMED, IN_PROGRESS) */}
+                            {(booking.status === 'CONFIRMED' || booking.status === 'IN_PROGRESS') && (
+                              <>
+                                <hr className="my-1" />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedBooking(booking);
+                                    setShowDetailsModal(true);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                >
+                                  <Eye className="w-4 h-4 text-blue-600" />
+                                  View Customer Details
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -413,6 +561,239 @@ const Bookings: React.FC = () => {
                 {actionType === 'start' && 'Start Service'}
                 {actionType === 'complete' && 'Complete Service'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Booking Details Modal - Only for Active Bookings */}
+      {showDetailsModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Complete Booking Details</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {selectedBooking.status === 'PENDING' && '📋 Review all details before making a decision'}
+                  {selectedBooking.status === 'CONFIRMED' && '✅ Customer details for upcoming service'}
+                  {selectedBooking.status === 'IN_PROGRESS' && '🔄 Current service in progress'}
+                </p>
+              </div>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                selectedBooking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                selectedBooking.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                selectedBooking.status === 'IN_PROGRESS' ? 'bg-purple-100 text-purple-800' :
+                selectedBooking.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                {selectedBooking.status}
+              </span>
+            </div>
+
+            <div className="space-y-6">
+              {/* Booking Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Booking Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Booking ID</label>
+                    <p className="text-sm text-gray-900 font-mono bg-white px-3 py-2 rounded border">#{selectedBooking.id.slice(0, 8)}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Created On</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">
+                      {new Date(selectedBooking.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Scheduled Date & Time</label>
+                    <p className="text-sm text-gray-900 font-semibold bg-white px-3 py-2 rounded border">
+                      {new Date(selectedBooking.scheduledDate).toLocaleDateString('en-IN')} at {selectedBooking.scheduledTime}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Duration</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">
+                      {selectedBooking.duration} hour{selectedBooking.duration > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Information */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <User className="w-5 h-5 mr-2" />
+                  Customer Details
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Name</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.user.name}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Email</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.user.email}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Phone</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border flex items-center">
+                      <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                      {selectedBooking.user.phone}
+                    </p>
+                  </div>
+                  {selectedBooking.user.address && (
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Address</label>
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border flex items-start">
+                        <MapPin className="w-4 h-4 mr-2 mt-0.5 text-gray-400" />
+                        {selectedBooking.user.address}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Service Information */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Service Details
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Service Name</label>
+                    <p className="text-sm text-gray-900 font-semibold bg-white px-3 py-2 rounded border">{selectedBooking.service.name}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Category</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.service.category?.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Price</label>
+                    <p className="text-sm text-gray-900 font-semibold bg-white px-3 py-2 rounded border">₹{selectedBooking.service.price}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Service Duration</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.service.duration} minutes</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Description</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.service.description}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Requirements & Notes */}
+              {selectedBooking.specialInstructions && (
+                <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
+                    Customer Requirements & Special Instructions
+                  </h4>
+                  <div className="bg-white px-4 py-3 rounded border">
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{selectedBooking.specialInstructions}</p>
+                  </div>
+                  {selectedBooking.status === 'PENDING' && (
+                    <p className="text-xs text-yellow-700 mt-2 italic">⚠️ Please review these requirements carefully before accepting</p>
+                  )}
+                </div>
+              )}
+
+              {/* Additional Notes */}
+              {selectedBooking.notes && (
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <FileText className="w-5 h-5 mr-2" />
+                    Additional Notes
+                  </h4>
+                  <div className="bg-white px-4 py-3 rounded border">
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{selectedBooking.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Information */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <DollarSign className="w-5 h-5 mr-2" />
+                  Payment Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Total Amount</label>
+                    <p className="text-lg text-gray-900 font-bold bg-white px-3 py-2 rounded border">₹{selectedBooking.totalAmount}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Payment Status</label>
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                      selectedBooking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
+                      selectedBooking.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {selectedBooking.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <Clock className="w-5 h-5 mr-2" />
+                  Timeline
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center text-sm">
+                    <span className="font-medium text-gray-700 w-32">Created:</span>
+                    <span className="text-gray-900">{new Date(selectedBooking.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span className="font-medium text-gray-700 w-32">Last Updated:</span>
+                    <span className="text-gray-900">{new Date(selectedBooking.updatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span className="font-medium text-gray-700 w-32">Scheduled For:</span>
+                    <span className="text-gray-900 font-semibold">{new Date(selectedBooking.scheduledDate).toLocaleDateString('en-IN', { dateStyle: 'full' })} at {selectedBooking.scheduledTime}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                Close
+              </button>
+              {selectedBooking.status === 'PENDING' && (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleBookingAction(selectedBooking.id, 'accept');
+                    }}
+                    className="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Accept Booking
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleBookingAction(selectedBooking.id, 'reject');
+                    }}
+                    className="px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center gap-2"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Reject Booking
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

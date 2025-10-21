@@ -108,12 +108,22 @@ public class BookingController {
      * @return ResponseEntity containing the updated booking
      */
     @PutMapping("/{id}/status")
-    public ResponseEntity<Booking> updateBookingStatus(@PathVariable UUID id, @RequestParam BookingStatus status) {
+    public ResponseEntity<?> updateBookingStatus(@PathVariable UUID id, @RequestParam BookingStatus status) {
         try {
+            System.out.println("Updating booking " + id + " status to " + status);
             Booking updatedBooking = bookingService.updateBookingStatus(id, status);
+            System.out.println("Booking status updated successfully");
             return ResponseEntity.ok(updatedBooking);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            System.err.println("Booking not found: " + e.getMessage());
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            System.err.println("Business rule violation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("Error updating booking status: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(java.util.Map.of("error", "Internal server error: " + e.getMessage()));
         }
     }
     
@@ -141,18 +151,34 @@ public class BookingController {
      * @param providerId the provider ID to assign
      * @return ResponseEntity containing the updated booking
      */
-    @PutMapping("/{id}/assign-provider")
-    public ResponseEntity<Booking> assignProvider(@PathVariable UUID id, @RequestParam UUID providerId) {
+    @PostMapping("/{id}/assign-provider/{providerId}")
+    public ResponseEntity<?> assignProvider(@PathVariable UUID id, @PathVariable UUID providerId) {
         try {
+            System.out.println("Assigning provider " + providerId + " to booking " + id);
+            
             Optional<Provider> providerOpt = providerService.findById(providerId);
             if (providerOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                System.err.println("Provider not found: " + providerId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(java.util.Map.of("error", "Provider not found"));
             }
             
             Booking updatedBooking = bookingService.assignProvider(id, providerOpt.get());
+            System.out.println("Provider assigned successfully");
             return ResponseEntity.ok(updatedBooking);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            System.err.println("Bad request: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(java.util.Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            System.err.println("Business rule violation: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("Error assigning provider: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(java.util.Map.of("error", "Failed to assign provider: " + e.getMessage()));
         }
     }
     
@@ -562,6 +588,89 @@ public class BookingController {
             return ResponseEntity.ok(completedBooking);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Get unassigned bookings (no provider assigned)
+     * 
+     * @return ResponseEntity containing list of unassigned bookings
+     */
+    @GetMapping("/unassigned")
+    public ResponseEntity<List<Booking>> getUnassignedBookings() {
+        try {
+            List<Booking> unassignedBookings = bookingService.findUnassignedBookings();
+            return ResponseEntity.ok(unassignedBookings);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get available providers for a booking (filtered by service + availability)
+     * This returns only providers who:
+     * - Offer the specific service
+     * - Are currently AVAILABLE
+     * - Are verified
+     * - Have no time conflicts
+     * 
+     * @param id the booking ID
+     * @return ResponseEntity containing the list of qualified providers
+     */
+    @GetMapping("/{id}/available-providers")
+    public ResponseEntity<List<Provider>> getAvailableProvidersForBooking(@PathVariable UUID id) {
+        try {
+            Optional<Booking> bookingOpt = bookingService.findById(id);
+            if (bookingOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Booking booking = bookingOpt.get();
+            UUID serviceId = booking.getService().getId();
+            
+            // Get providers who offer this service and are available
+            List<Provider> providers = providerService.getAvailableVerifiedProvidersByService(serviceId);
+            
+            // Filter out providers with time conflicts for this booking's date/time
+            LocalDate bookingDate = booking.getScheduledDate();
+            LocalTime bookingStartTime = booking.getScheduledTime();
+            LocalTime bookingEndTime = bookingStartTime.plusHours(booking.getDuration());
+            
+            List<Provider> availableProviders = providers.stream()
+                .filter(provider -> {
+                    // Get provider's bookings on the same date
+                    List<Booking> providerBookings = bookingService.getBookingsByProvider(provider).stream()
+                        .filter(b -> b.getScheduledDate().equals(bookingDate))
+                        .filter(b -> b.getStatus() == BookingStatus.CONFIRMED || b.getStatus() == BookingStatus.IN_PROGRESS)
+                        .toList();
+                    
+                    // Check for time conflicts
+                    for (Booking existingBooking : providerBookings) {
+                        // Skip the current booking being assigned
+                        if (existingBooking.getId().equals(id)) {
+                            continue;
+                        }
+                        
+                        LocalTime existingStart = existingBooking.getScheduledTime();
+                        LocalTime existingEnd = existingStart.plusHours(existingBooking.getDuration());
+                        
+                        // Check if times overlap
+                        boolean overlap = !(bookingEndTime.isBefore(existingStart) || bookingStartTime.isAfter(existingEnd) || bookingEndTime.equals(existingStart) || bookingStartTime.equals(existingEnd));
+                        
+                        if (overlap) {
+                            return false; // Provider has time conflict
+                        }
+                    }
+                    
+                    return true; // Provider is available
+                })
+                .toList();
+            
+            return ResponseEntity.ok(availableProviders);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

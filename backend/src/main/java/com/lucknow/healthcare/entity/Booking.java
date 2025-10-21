@@ -62,7 +62,6 @@ public class Booking {
     private BookingStatus status = BookingStatus.PENDING;
     
     @NotNull(message = "Scheduled date is required")
-    @Future(message = "Scheduled date must be in the future")
     @Column(nullable = false)
     private LocalDate scheduledDate;
     

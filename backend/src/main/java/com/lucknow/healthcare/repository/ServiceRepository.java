@@ -185,4 +185,14 @@ public interface ServiceRepository extends JpaRepository<Service, UUID> {
     Page<Service> findByCategoryId(UUID categoryId, Pageable pageable);
     Page<Service> findByCategoryAndIsActiveTrue(ServiceCategory category, Pageable pageable);
     Page<Service> findByCategoryIdAndIsActiveTrue(UUID categoryId, Pageable pageable);
+    
+    /**
+     * Find services offered by a specific provider
+     * Uses JOIN on provider_services table to eagerly fetch
+     * 
+     * @param providerId the provider ID
+     * @return List of services the provider offers
+     */
+    @Query("SELECT DISTINCT s FROM Service s JOIN s.providers p WHERE p.id = :providerId")
+    List<Service> findServicesByProviderId(@Param("providerId") UUID providerId);
 }

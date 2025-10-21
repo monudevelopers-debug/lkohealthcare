@@ -49,6 +49,9 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private ProviderService providerService;
     
+    @Autowired
+    private com.lucknow.healthcare.repository.ProviderRepository providerRepository;
+    
     @Override
     public Booking createBooking(Booking booking) {
         // Validate user exists
@@ -108,6 +111,15 @@ public class BookingServiceImpl implements BookingService {
         
         Booking booking = bookingOpt.get();
         BookingStatus oldStatus = booking.getStatus();
+        
+        // BUSINESS RULE: Cannot start service without a provider assigned
+        if (status == BookingStatus.IN_PROGRESS && booking.getProvider() == null) {
+            throw new IllegalStateException(
+                "Cannot start service - No provider assigned to this booking. " +
+                "Please assign a provider first."
+            );
+        }
+        
         booking.setStatus(status);
         
         // AUTO-UPDATE PROVIDER STATUS based on booking status
@@ -116,7 +128,8 @@ public class BookingServiceImpl implements BookingService {
             
             // When service starts (IN_PROGRESS), set provider to BUSY
             if (status == BookingStatus.IN_PROGRESS) {
-                providerService.updateProviderAvailability(provider.getId(), com.lucknow.healthcare.enums.AvailabilityStatus.BUSY);
+                provider.setAvailabilityStatus(com.lucknow.healthcare.enums.AvailabilityStatus.BUSY);
+                providerRepository.save(provider);
                 System.out.println("Provider " + provider.getName() + " auto-set to BUSY (booking started)");
             }
             
@@ -130,7 +143,8 @@ public class BookingServiceImpl implements BookingService {
                 
                 // If no other active bookings, set back to AVAILABLE
                 if (otherInProgressBookings.isEmpty()) {
-                    providerService.updateProviderAvailability(provider.getId(), com.lucknow.healthcare.enums.AvailabilityStatus.AVAILABLE);
+                    provider.setAvailabilityStatus(com.lucknow.healthcare.enums.AvailabilityStatus.AVAILABLE);
+                    providerRepository.save(provider);
                     System.out.println("Provider " + provider.getName() + " auto-set to AVAILABLE (all bookings completed)");
                 }
             }
@@ -474,6 +488,12 @@ public class BookingServiceImpl implements BookingService {
         
         bookingRepository.save(booking);
         return true;
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<Booking> findUnassignedBookings() {
+        return bookingRepository.findUnassignedBookings();
     }
     
     @Override

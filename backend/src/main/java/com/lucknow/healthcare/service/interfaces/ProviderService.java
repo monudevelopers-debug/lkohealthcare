@@ -262,4 +262,57 @@ public interface ProviderService {
      * @throws IllegalArgumentException if provider not found
      */
     boolean deleteProvider(UUID id);
+    
+    /**
+     * Add service to provider
+     * 
+     * @param providerId the provider ID
+     * @param serviceId the service ID to add
+     * @return the updated provider
+     * @throws IllegalArgumentException if provider or service not found
+     */
+    Provider addServiceToProvider(UUID providerId, UUID serviceId);
+    
+    /**
+     * Remove service from provider
+     * 
+     * @param providerId the provider ID
+     * @param serviceId the service ID to remove
+     * @return the updated provider
+     * @throws IllegalArgumentException if provider or service not found
+     */
+    Provider removeServiceFromProvider(UUID providerId, UUID serviceId);
+    
+    /**
+     * Get providers who offer a specific service
+     * 
+     * @param serviceId the service ID
+     * @return List of providers who can offer the specified service
+     */
+    List<Provider> getProvidersByService(UUID serviceId);
+    
+    /**
+     * Get available providers who offer a specific service
+     * 
+     * @param serviceId the service ID
+     * @return List of available providers who can offer the specified service
+     */
+    List<Provider> getAvailableProvidersByService(UUID serviceId);
+    
+    /**
+     * Get available and verified providers who offer a specific service
+     * This is the primary method for booking assignments
+     * 
+     * @param serviceId the service ID
+     * @return List of available and verified providers who can offer the specified service
+     */
+    List<Provider> getAvailableVerifiedProvidersByService(UUID serviceId);
+    
+    /**
+     * Get services for a provider with eager loading (to avoid lazy loading issues)
+     * 
+     * @param providerId the provider ID
+     * @return List of services the provider offers
+     */
+    List<com.lucknow.healthcare.entity.Service> getProviderServicesEager(UUID providerId);
 }

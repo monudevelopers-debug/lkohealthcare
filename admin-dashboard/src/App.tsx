@@ -8,6 +8,8 @@ import Bookings from './pages/Bookings';
 import Providers from './pages/Providers';
 import Users from './pages/Users';
 import Services from './pages/Services';
+import ServiceRequests from './pages/ServiceRequests';
+import ManageBookings from './pages/ManageBookings';
 import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 
@@ -33,9 +35,11 @@ function App() {
               <Route path="/" element={<Layout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="bookings" element={<Bookings />} />
+                <Route path="manage-bookings" element={<ManageBookings />} />
                 <Route path="providers" element={<Providers />} />
                 <Route path="users" element={<Users />} />
                 <Route path="services" element={<Services />} />
+                <Route path="service-requests" element={<ServiceRequests />} />
                 <Route path="analytics" element={<Analytics />} />
               </Route>
             </Routes>

@@ -12,11 +12,13 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  UserPlus
+  UserPlus,
+  Tag
 } from 'lucide-react';
 
 import { getProviders, updateProviderStatus, updateProvider } from '../services/api';
 import { Provider } from '../services/api';
+import ProviderServiceManager from '../components/providers/ProviderServiceManager';
 
 const Providers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -476,6 +478,15 @@ const Providers: React.FC = () => {
                 <p className="text-sm text-blue-800">
                   <strong>Note:</strong> Only basic details can be edited here. Use "Change Status" button on the provider card to modify availability status.
                 </p>
+              </div>
+
+              {/* Service Management Section */}
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Tag className="w-5 h-5" />
+                  Manage Services (Admin Direct Assignment)
+                </h4>
+                <ProviderServiceManager providerId={selectedProvider.id} />
               </div>
 
               <div className="flex justify-end space-x-3">

@@ -5,6 +5,7 @@ import com.lucknow.healthcare.entity.Provider;
 import com.lucknow.healthcare.entity.Review;
 import com.lucknow.healthcare.entity.User;
 import com.lucknow.healthcare.enums.AvailabilityStatus;
+import com.lucknow.healthcare.enums.BookingStatus;
 import com.lucknow.healthcare.service.interfaces.BookingService;
 import com.lucknow.healthcare.service.interfaces.ProviderService;
 import com.lucknow.healthcare.service.interfaces.ReviewService;
@@ -430,33 +431,20 @@ public class ProviderController {
      * @return ResponseEntity containing the provider profile
      */
     @GetMapping("/profile")
-    public ResponseEntity<Map<String, Object>> getProviderProfile() {
+    public ResponseEntity<Provider> getProviderProfile() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String email = authentication.getName();
             
-            Optional<User> userOpt = userService.findByEmail(email);
-            if (userOpt.isEmpty()) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("error", "User not found");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-            }
-            
             Optional<Provider> providerOpt = providerService.findByEmail(email);
             if (providerOpt.isEmpty()) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("error", "Provider profile not found");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("provider", providerOpt.get());
-            response.put("user", userOpt.get());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(providerOpt.get());
         } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
@@ -568,18 +556,67 @@ public class ProviderController {
             Provider provider = providerOpt.get();
             Map<String, Object> stats = new HashMap<>();
             
-            // Mock statistics for now - can be replaced with real calculations
-            stats.put("todayBookings", 5);
-            stats.put("activeBookings", 3);
-            stats.put("totalEarnings", 15000.0);
-            stats.put("rating", provider.getRating());
-            stats.put("todayBookingsChange", 20.0);
-            stats.put("activeBookingsChange", 10.0);
-            stats.put("earningsChange", 15.0);
-            stats.put("ratingChange", 0.5);
-            
-            return ResponseEntity.ok(stats);
+            try {
+                // Get all provider bookings
+                List<Booking> allBookings = bookingService.getBookingsByProvider(provider);
+                LocalDate today = LocalDate.now();
+                
+                // Calculate today's bookings
+                long todayBookings = allBookings.stream()
+                    .filter(b -> b.getScheduledDate() != null && b.getScheduledDate().equals(today))
+                    .count();
+                
+                // Calculate active bookings (PENDING, CONFIRMED, IN_PROGRESS)
+                long activeBookings = allBookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.PENDING || 
+                                b.getStatus() == BookingStatus.CONFIRMED ||
+                                b.getStatus() == BookingStatus.IN_PROGRESS)
+                    .count();
+                
+                // Calculate total earnings (from COMPLETED bookings)
+                double totalEarnings = allBookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                    .mapToDouble(b -> b.getTotalAmount() != null ? b.getTotalAmount().doubleValue() : 0.0)
+                    .sum();
+                
+                // Calculate yesterday's bookings for change percentage
+                LocalDate yesterday = today.minusDays(1);
+                long yesterdayBookings = allBookings.stream()
+                    .filter(b -> b.getScheduledDate() != null && b.getScheduledDate().equals(yesterday))
+                    .count();
+                
+                double todayBookingsChange = yesterdayBookings > 0 
+                    ? ((double)(todayBookings - yesterdayBookings) / yesterdayBookings) * 100 
+                    : 0;
+                
+                stats.put("todayBookings", todayBookings);
+                stats.put("activeBookings", activeBookings);
+                stats.put("totalEarnings", totalEarnings);
+                stats.put("rating", provider.getRating() != null ? provider.getRating() : 0.0);
+                stats.put("todayBookingsChange", todayBookingsChange);
+                stats.put("activeBookingsChange", 0.0);
+                stats.put("earningsChange", 0.0);
+                stats.put("ratingChange", 0.0);
+                
+                return ResponseEntity.ok(stats);
+            } catch (Exception calcEx) {
+                System.err.println("Error calculating stats: " + calcEx.getMessage());
+                calcEx.printStackTrace();
+                
+                // Return default stats on error
+                stats.put("todayBookings", 0);
+                stats.put("activeBookings", 0);
+                stats.put("totalEarnings", 0.0);
+                stats.put("rating", provider.getRating() != null ? provider.getRating() : 0.0);
+                stats.put("todayBookingsChange", 0.0);
+                stats.put("activeBookingsChange", 0.0);
+                stats.put("earningsChange", 0.0);
+                stats.put("ratingChange", 0.0);
+                
+                return ResponseEntity.ok(stats);
+            }
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -778,6 +815,90 @@ public class ProviderController {
             response.put("size", size);
             
             return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Add service to provider
+     * 
+     * @param id the provider ID
+     * @param serviceId the service ID to add
+     * @return ResponseEntity containing the updated provider
+     */
+    @PostMapping("/{id}/services/{serviceId}")
+    public ResponseEntity<Provider> addServiceToProvider(@PathVariable UUID id, @PathVariable UUID serviceId) {
+        try {
+            Provider updatedProvider = providerService.addServiceToProvider(id, serviceId);
+            return ResponseEntity.ok(updatedProvider);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Remove service from provider
+     * 
+     * @param id the provider ID
+     * @param serviceId the service ID to remove
+     * @return ResponseEntity containing the updated provider
+     */
+    @DeleteMapping("/{id}/services/{serviceId}")
+    public ResponseEntity<Provider> removeServiceFromProvider(@PathVariable UUID id, @PathVariable UUID serviceId) {
+        try {
+            Provider updatedProvider = providerService.removeServiceFromProvider(id, serviceId);
+            return ResponseEntity.ok(updatedProvider);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Get services offered by a provider
+     * 
+     * @param id the provider ID
+     * @return ResponseEntity containing the list of services
+     */
+    @GetMapping("/{id}/services")
+    public ResponseEntity<List<com.lucknow.healthcare.entity.Service>> getProviderServices(@PathVariable UUID id) {
+        try {
+            // Use a native query to fetch provider services with JOIN to avoid lazy loading
+            List<com.lucknow.healthcare.entity.Service> services = providerService.getProviderServicesEager(id);
+            return ResponseEntity.ok(services);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get providers who offer a specific service
+     * 
+     * @param serviceId the service ID
+     * @return ResponseEntity containing the list of providers
+     */
+    @GetMapping("/by-service/{serviceId}")
+    public ResponseEntity<List<Provider>> getProvidersByService(@PathVariable UUID serviceId) {
+        try {
+            List<Provider> providers = providerService.getProvidersByService(serviceId);
+            return ResponseEntity.ok(providers);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get available providers who offer a specific service
+     * 
+     * @param serviceId the service ID
+     * @return ResponseEntity containing the list of available providers
+     */
+    @GetMapping("/by-service/{serviceId}/available")
+    public ResponseEntity<List<Provider>> getAvailableProvidersByService(@PathVariable UUID serviceId) {
+        try {
+            List<Provider> providers = providerService.getAvailableProvidersByService(serviceId);
+            return ResponseEntity.ok(providers);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

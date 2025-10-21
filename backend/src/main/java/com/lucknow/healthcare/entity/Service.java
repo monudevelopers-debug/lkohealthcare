@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -62,6 +63,10 @@ public class Service {
     
     @Column(nullable = false)
     private Boolean isActive = true;
+    
+    @ManyToMany(mappedBy = "services", fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<Provider> providers; // Providers who can offer this service
     
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -149,6 +154,14 @@ public class Service {
     
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+    
+    public List<Provider> getProviders() {
+        return providers;
+    }
+    
+    public void setProviders(List<Provider> providers) {
+        this.providers = providers;
     }
     
     public LocalDateTime getCreatedAt() {

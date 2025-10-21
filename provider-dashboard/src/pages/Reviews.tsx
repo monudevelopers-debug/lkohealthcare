@@ -4,11 +4,8 @@ import {
   Star, 
   Search,
   Filter,
-  MoreVertical,
   Eye,
   Reply,
-  ThumbsUp,
-  ThumbsDown,
   Calendar,
   User,
   MessageSquare,
@@ -16,8 +13,7 @@ import {
   TrendingDown
 } from 'lucide-react';
 
-import { getMyReviews } from '../services/api';
-import { Review } from '../types/review';
+import { getMyReviews, Review } from '../services/api';
 
 const Reviews: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,18 +34,69 @@ const Reviews: React.FC = () => {
   const reviews = reviewsData?.content || [];
   
   // Review statistics - calculated from reviews data
+  const totalReviews = reviews.length;
+  const rating1Count = reviews.filter(r => r.rating === 1).length;
+  const rating2Count = reviews.filter(r => r.rating === 2).length;
+  const rating3Count = reviews.filter(r => r.rating === 3).length;
+  const rating4Count = reviews.filter(r => r.rating === 4).length;
+  const rating5Count = reviews.filter(r => r.rating === 5).length;
+  
+  const averageRating = totalReviews > 0
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
+    : 0;
+  
+  const responseRate = 0; // Provider replies not yet implemented
+  
   const reviewStats = {
-    rating1Count: reviews.filter(r => r.rating === 1).length,
-    rating2Count: reviews.filter(r => r.rating === 2).length,
-    rating3Count: reviews.filter(r => r.rating === 3).length,
-    rating4Count: reviews.filter(r => r.rating === 4).length,
-    rating5Count: reviews.filter(r => r.rating === 5).length,
+    totalReviews,
+    averageRating,
+    fiveStarReviews: rating5Count,
+    responseRate,
+    reviewsChange: 0, // Would need historical data to calculate
+    ratingChange: 0, // Would need historical data to calculate
+    fiveStarChange: 0, // Would need historical data to calculate
+    responseChange: 0, // Would need historical data to calculate
+    reviewsTrend: 'up' as const,
+    ratingTrend: 'up' as const,
+    fiveStarTrend: 'up' as const,
+    responseTrend: 'up' as const,
+    ratingDistribution: {
+      5: rating5Count,
+      4: rating4Count,
+      3: rating3Count,
+      2: rating2Count,
+      1: rating1Count,
+    }
   };
-  const filteredReviews = reviews.filter(review =>
-    review.comment.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    review.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    review.booking.service.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  
+  let filteredReviews = reviews.filter(review => {
+    // Apply search filter
+    const matchesSearch = 
+      (review.comment?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (review.user?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (review.booking?.service?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    
+    // Apply rating filter
+    const matchesRating = ratingFilter === 'ALL' || review.rating.toString() === ratingFilter;
+    
+    return matchesSearch && matchesRating;
+  });
+
+  // Apply sorting
+  filteredReviews = [...filteredReviews].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'oldest':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'highest':
+        return b.rating - a.rating;
+      case 'lowest':
+        return a.rating - b.rating;
+      default:
+        return 0;
+    }
+  });
 
   const getRatingColor = (rating: number) => {
     if (rating >= 4) return 'text-green-600';
@@ -168,8 +215,8 @@ const Reviews: React.FC = () => {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Rating Distribution</h2>
         <div className="space-y-3">
           {[5, 4, 3, 2, 1].map((rating) => {
-            const count = reviewStats?.ratingDistribution?.[rating] || 0;
-            const percentage = reviewStats?.totalReviews ? (count / reviewStats.totalReviews) * 100 : 0;
+            const count = reviewStats.ratingDistribution[rating as keyof typeof reviewStats.ratingDistribution] || 0;
+            const percentage = reviewStats.totalReviews ? (count / reviewStats.totalReviews) * 100 : 0;
             return (
               <div key={rating} className="flex items-center">
                 <div className="flex items-center w-16">
@@ -265,7 +312,7 @@ const Reviews: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-sm font-medium text-gray-900">
-                        {review.customer.name}
+                        {review.user?.name || 'Anonymous'}
                       </h3>
                       <div className="flex items-center">
                         {renderStars(review.rating)}
@@ -278,7 +325,7 @@ const Reviews: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-sm text-gray-700 mb-3">
-                      {review.comment}
+                      {review.comment || 'No comment provided'}
                     </p>
                     <div className="flex items-center space-x-4 text-xs text-gray-500">
                       <div className="flex items-center">
@@ -286,25 +333,9 @@ const Reviews: React.FC = () => {
                         {new Date(review.createdAt).toLocaleDateString()}
                       </div>
                       <div className="flex items-center">
-                        <span>Service: {review.booking.service.name}</span>
+                        <span>Service: {review.booking?.service?.name || 'Unknown'}</span>
                       </div>
-                      {review.isPublic && (
-                        <span className="text-green-600">Public</span>
-                      )}
                     </div>
-                    {review.providerReply && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-sm font-medium text-blue-800">Your Reply:</span>
-                          <span className="text-xs text-blue-600">
-                            {new Date(review.providerReply.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-sm text-blue-700">
-                          {review.providerReply.comment}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -315,17 +346,13 @@ const Reviews: React.FC = () => {
                   >
                     <Eye className="w-4 h-4" />
                   </button>
-                  {!review.providerReply && (
-                    <button
-                      onClick={() => handleReply(review)}
-                      className="text-green-600 hover:text-green-900"
-                      title="Reply to Review"
-                    >
-                      <Reply className="w-4 h-4" />
-                    </button>
-                  )}
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <MoreVertical className="w-4 h-4" />
+                  <button
+                    onClick={() => handleReply(review)}
+                    className="text-green-600 hover:text-green-900"
+                    title="Reply to Review (Coming Soon)"
+                    disabled
+                  >
+                    <Reply className="w-4 h-4 opacity-50" />
                   </button>
                 </div>
               </div>
@@ -347,7 +374,7 @@ const Reviews: React.FC = () => {
                   <User className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900">{selectedReview.customer.name}</h4>
+                  <h4 className="text-sm font-medium text-gray-900">{selectedReview.user?.name || 'Anonymous'}</h4>
                   <div className="flex items-center">
                     {renderStars(selectedReview.rating)}
                     <span className="ml-2 text-sm text-gray-500">
@@ -358,29 +385,18 @@ const Reviews: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
-                <p className="text-sm text-gray-900">{selectedReview.comment}</p>
+                <p className="text-sm text-gray-900">{selectedReview.comment || 'No comment provided'}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Service</label>
-                  <p className="text-sm text-gray-900">{selectedReview.booking.service.name}</p>
+                  <p className="text-sm text-gray-900">{selectedReview.booking?.service?.name || 'Unknown'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
                   <p className="text-sm text-gray-900">{new Date(selectedReview.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
-              {selectedReview.providerReply && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your Reply</label>
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700">{selectedReview.providerReply.comment}</p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      Replied on {new Date(selectedReview.providerReply.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
             <div className="mt-6 flex justify-end">
               <button
@@ -399,23 +415,23 @@ const Reviews: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Reply to Review
+              Reply to Review (Coming Soon)
             </h3>
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
-                <span className="text-sm font-medium text-gray-700">{selectedReview.customer.name}</span>
+                <span className="text-sm font-medium text-gray-700">{selectedReview.user?.name || 'Anonymous'}</span>
                 <div className="flex items-center">
                   {renderStars(selectedReview.rating)}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">{selectedReview.comment}</p>
+              <p className="text-sm text-gray-600">{selectedReview.comment || 'No comment provided'}</p>
             </div>
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const reply = formData.get('reply') as string;
-                // Handle reply submission
+                // const formData = new FormData(e.currentTarget);
+                // const reply = formData.get('reply') as string;
+                // Handle reply submission (feature coming soon)
                 setShowReplyModal(false);
                 setSelectedReview(null);
               }}

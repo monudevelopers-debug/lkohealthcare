@@ -82,6 +82,15 @@ public class Provider {
     @Column(columnDefinition = "JSONB")
     private List<String> documents; // Store verification documents
     
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "provider_services",
+        joinColumns = @JoinColumn(name = "provider_id"),
+        inverseJoinColumns = @JoinColumn(name = "service_id")
+    )
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<Service> services; // Services this provider can offer
+    
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -205,6 +214,14 @@ public class Provider {
     
     public void setDocuments(List<String> documents) {
         this.documents = documents;
+    }
+    
+    public List<Service> getServices() {
+        return services;
+    }
+    
+    public void setServices(List<Service> services) {
+        this.services = services;
     }
     
     public LocalDateTime getCreatedAt() {

@@ -261,6 +261,19 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     @Query("SELECT b FROM Booking b WHERE b.provider IS NULL AND b.status = 'PENDING'")
     List<Booking> findBookingsNeedingProviderAssignment();
     
+    /**
+     * Find bookings that need provider assignment or can be reassigned
+     * (not cancelled or completed)
+     */
+    @Query("SELECT b FROM Booking b WHERE (b.provider IS NULL OR b.status IN ('PENDING', 'CONFIRMED')) AND b.status NOT IN ('CANCELLED', 'COMPLETED') ORDER BY b.scheduledDate ASC, b.scheduledTime ASC")
+    List<Booking> findUnassignedBookings();
+    
+    /**
+     * Find unassigned bookings (no provider assigned) with pagination
+     */
+    @Query("SELECT b FROM Booking b WHERE b.provider IS NULL AND b.status != 'CANCELLED' ORDER BY b.scheduledDate ASC, b.scheduledTime ASC")
+    Page<Booking> findUnassignedBookings(Pageable pageable);
+    
     // Pageable methods
     Page<Booking> findByUser(User user, Pageable pageable);
     Page<Booking> findByUserId(UUID userId, Pageable pageable);

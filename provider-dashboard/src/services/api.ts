@@ -80,7 +80,6 @@ export interface Review {
   rating: number;
   comment?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface ProviderStats {
@@ -300,6 +299,7 @@ export const login = (credentials: LoginRequest) => apiClient.login(credentials)
 export const logout = () => apiClient.logout();
 export const getCurrentUser = () => apiClient.getCurrentUser();
 export const getProviderProfile = () => apiClient.getProviderProfile();
+export const getCurrentProvider = () => apiClient.getProviderProfile(); // Alias for clarity
 export const updateProviderProfile = (profile: Partial<Provider>) => apiClient.updateProviderProfile(profile);
 export const updateAvailability = (isAvailable: boolean) => apiClient.updateAvailability(isAvailable);
 export const getMyBookings = (page = 0, size = 20, status?: Booking['status']) => apiClient.getMyBookings(page, size, status);

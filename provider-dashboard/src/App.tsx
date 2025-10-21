@@ -6,6 +6,8 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import Bookings from './pages/Bookings';
+import BookingHistory from './pages/BookingHistory';
+import Services from './pages/Services';
 import Profile from './pages/Profile';
 import Reviews from './pages/Reviews';
 import Analytics from './pages/Analytics';
@@ -33,6 +35,8 @@ function App() {
               <Route path="/" element={<Layout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="bookings" element={<Bookings />} />
+                <Route path="bookings/history" element={<BookingHistory />} />
+                <Route path="services" element={<Services />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="analytics" element={<Analytics />} />

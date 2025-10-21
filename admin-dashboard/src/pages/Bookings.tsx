@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Calendar, 
@@ -32,18 +32,33 @@ const Bookings: React.FC = () => {
   
   const queryClient = useQueryClient();
 
-  // Fetch available providers when assign modal is open
+  // Fetch available providers when assign modal is open (filtered by service)
   const { data: providersData } = useQuery(
-    ['available-providers', showAssignModal],
-    () => getProviders(0, 100),
+    ['available-providers', selectedBooking?.id],
+    async () => {
+      if (!selectedBooking) return null;
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:8080/api/bookings/${selectedBooking.id}/available-providers`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error('Failed to fetch available providers');
+      const providers = await response.json();
+      // Return in same format as getProviders
+      return { content: providers };
+    },
     {
-      enabled: showAssignModal, // Only fetch when modal is open
+      enabled: showAssignModal && !!selectedBooking, // Only fetch when modal is open and booking is selected
     }
   );
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = () => {
       if (openMenuId) {
         setOpenMenuId(null);
       }
@@ -66,22 +81,36 @@ const Bookings: React.FC = () => {
     const buttonRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const spaceBelow = viewportHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
     
-    // Calculate position - use fixed positioning to escape overflow container
-    if (spaceBelow < 300) {
-      // Open upward
-      setMenuPosition({
-        bottom: viewportHeight - buttonRect.top,
+    const menuHeight = 300; // Estimated menu height
+    
+    // Smart positioning: choose direction with more space
+    // Also ensure menu doesn't go off-screen at top
+    let position;
+    if (spaceBelow >= menuHeight || spaceBelow > spaceAbove) {
+      // Open downward - has enough space or more space than above
+      position = {
+        top: buttonRect.bottom + 5,
         right: window.innerWidth - buttonRect.right
-      });
+      };
+    } else if (spaceAbove >= menuHeight) {
+      // Open upward - has enough space above
+      position = {
+        bottom: viewportHeight - buttonRect.top + 5,
+        right: window.innerWidth - buttonRect.right
+      };
     } else {
-      // Open downward
-      setMenuPosition({
-        top: buttonRect.bottom,
+      // Not enough space either way - position to fit best
+      // Calculate top position that keeps menu in viewport
+      const idealTop = Math.max(10, Math.min(buttonRect.bottom, viewportHeight - menuHeight - 10));
+      position = {
+        top: idealTop,
         right: window.innerWidth - buttonRect.right
-      });
+      };
     }
     
+    setMenuPosition(position);
     setOpenMenuId(bookingId);
   };
 
@@ -101,6 +130,22 @@ const Bookings: React.FC = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['bookings']);
+      },
+      onError: (error: any, variables) => {
+        const errorMessage = error?.response?.data?.error || error?.message || 'Unknown error';
+        
+        // Check if error is about missing provider
+        if (errorMessage.includes('No provider assigned') || errorMessage.includes('assign a provider')) {
+          const booking = bookings.find(b => b.id === variables.id);
+          if (booking) {
+            // Show assign provider modal
+            setSelectedBooking(booking);
+            setShowAssignModal(true);
+            alert('⚠️ Cannot start service: No provider assigned.\n\nPlease assign a provider first.');
+          }
+        } else {
+          alert(`Error: ${errorMessage}`);
+        }
       },
     }
   );

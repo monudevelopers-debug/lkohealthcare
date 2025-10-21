@@ -38,6 +38,9 @@ public class ProviderServiceImpl implements ProviderService {
     @Autowired
     private BookingRepository bookingRepository;
     
+    @Autowired
+    private com.lucknow.healthcare.repository.ServiceRepository serviceRepository;
+    
     @Override
     public Provider createProvider(Provider provider) {
         // Check if email already exists
@@ -292,5 +295,91 @@ public class ProviderServiceImpl implements ProviderService {
     @Transactional(readOnly = true)
     public long countAllProviders() {
         return providerRepository.count();
+    }
+    
+    @Override
+    public Provider addServiceToProvider(UUID providerId, UUID serviceId) {
+        Optional<Provider> providerOpt = providerRepository.findById(providerId);
+        Optional<com.lucknow.healthcare.entity.Service> serviceOpt = serviceRepository.findById(serviceId);
+        
+        if (providerOpt.isEmpty()) {
+            throw new IllegalArgumentException("Provider not found with ID: " + providerId);
+        }
+        
+        if (serviceOpt.isEmpty()) {
+            throw new IllegalArgumentException("Service not found with ID: " + serviceId);
+        }
+        
+        Provider provider = providerOpt.get();
+        com.lucknow.healthcare.entity.Service service = serviceOpt.get();
+        
+        // Initialize the services list if null
+        if (provider.getServices() == null) {
+            provider.setServices(new java.util.ArrayList<>());
+        }
+        
+        // Check if service already exists
+        if (!provider.getServices().contains(service)) {
+            provider.getServices().add(service);
+        }
+        
+        return providerRepository.save(provider);
+    }
+    
+    @Override
+    public Provider removeServiceFromProvider(UUID providerId, UUID serviceId) {
+        Optional<Provider> providerOpt = providerRepository.findById(providerId);
+        Optional<com.lucknow.healthcare.entity.Service> serviceOpt = serviceRepository.findById(serviceId);
+        
+        if (providerOpt.isEmpty()) {
+            throw new IllegalArgumentException("Provider not found with ID: " + providerId);
+        }
+        
+        if (serviceOpt.isEmpty()) {
+            throw new IllegalArgumentException("Service not found with ID: " + serviceId);
+        }
+        
+        Provider provider = providerOpt.get();
+        com.lucknow.healthcare.entity.Service service = serviceOpt.get();
+        
+        if (provider.getServices() != null) {
+            provider.getServices().remove(service);
+        }
+        
+        return providerRepository.save(provider);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<Provider> getProvidersByService(UUID serviceId) {
+        return providerRepository.findByServiceId(serviceId);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<Provider> getAvailableProvidersByService(UUID serviceId) {
+        return providerRepository.findByServiceIdAndAvailabilityStatus(serviceId, AvailabilityStatus.AVAILABLE);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<Provider> getAvailableVerifiedProvidersByService(UUID serviceId) {
+        return providerRepository.findAvailableVerifiedProvidersByService(serviceId);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.lucknow.healthcare.entity.Service> getProviderServicesEager(UUID providerId) {
+        // Fetch provider with services eagerly loaded
+        Optional<Provider> providerOpt = providerRepository.findById(providerId);
+        
+        if (providerOpt.isEmpty()) {
+            return List.of();
+        }
+        
+        Provider provider = providerOpt.get();
+        
+        // Use a native query to fetch services to avoid lazy loading
+        return serviceRepository.findServicesByProviderId(providerId);
     }
 }

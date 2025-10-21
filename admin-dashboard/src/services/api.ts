@@ -62,8 +62,11 @@ export interface Booking {
   provider?: Provider;
   scheduledDate: string;
   scheduledTime: string;
+  duration: number;
   status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   totalAmount: number;
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  specialInstructions?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -330,7 +333,7 @@ class ApiClient {
   }
 
   async updateBookingStatus(id: string, status: Booking['status']): Promise<Booking> {
-    const response: AxiosResponse<Booking> = await this.client.patch(`/bookings/${id}/status`, { status });
+    const response: AxiosResponse<Booking> = await this.client.put(`/bookings/${id}/status?status=${status}`);
     return response.data;
   }
 

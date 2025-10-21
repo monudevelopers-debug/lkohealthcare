@@ -172,4 +172,34 @@ public interface ProviderRepository extends JpaRepository<Provider, UUID> {
     Page<Provider> findByAvailabilityStatus(AvailabilityStatus availabilityStatus, Pageable pageable);
     Page<Provider> findByIsVerified(Boolean isVerified, Pageable pageable);
     Page<Provider> findByAvailabilityStatusAndIsVerifiedTrue(AvailabilityStatus availabilityStatus, Pageable pageable);
+    
+    /**
+     * Find providers who offer a specific service
+     * 
+     * @param serviceId the service ID to search for
+     * @return List of providers who can offer the specified service
+     */
+    @Query("SELECT DISTINCT p FROM Provider p JOIN p.services s WHERE s.id = :serviceId")
+    List<Provider> findByServiceId(@Param("serviceId") UUID serviceId);
+    
+    /**
+     * Find available providers who offer a specific service
+     * 
+     * @param serviceId the service ID to search for
+     * @param availabilityStatus the availability status to filter by
+     * @return List of available providers who can offer the specified service
+     */
+    @Query("SELECT DISTINCT p FROM Provider p JOIN p.services s WHERE s.id = :serviceId AND p.availabilityStatus = :availabilityStatus")
+    List<Provider> findByServiceIdAndAvailabilityStatus(@Param("serviceId") UUID serviceId, 
+                                                         @Param("availabilityStatus") AvailabilityStatus availabilityStatus);
+    
+    /**
+     * Find available and verified providers who offer a specific service
+     * This is the primary method for booking assignments
+     * 
+     * @param serviceId the service ID to search for
+     * @return List of available and verified providers who can offer the specified service
+     */
+    @Query("SELECT DISTINCT p FROM Provider p JOIN p.services s WHERE s.id = :serviceId AND p.availabilityStatus = 'AVAILABLE' AND p.isVerified = true ORDER BY p.rating DESC")
+    List<Provider> findAvailableVerifiedProvidersByService(@Param("serviceId") UUID serviceId);
 }
