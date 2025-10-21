@@ -166,7 +166,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <footer className="border-t bg-white py-4 px-4 lg:px-8">
           <div className="text-center text-sm text-gray-600">
             <p>© {new Date().getFullYear()} Lucknow Healthcare. All rights reserved.</p>
-            <p className="mt-1">Developed with ❤️ by <span className="font-medium">Monu Developers</span></p>
+            <p className="mt-1">Developed with ❤️ by <span className="font-medium">ConnateCoders</span></p>
           </div>
         </footer>
       </div>
