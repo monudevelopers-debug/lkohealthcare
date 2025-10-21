@@ -2,21 +2,21 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth/AuthContext';
 import {
-  LayoutDashboard,
-  Users,
-  Calendar,
-  CreditCard,
-  User,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Phone,
-  Stethoscope,
-  Star,
-  FileText,
-  HelpCircle
-} from 'lucide-react';
+  Squares2X2Icon,
+  UsersIcon,
+  CalendarIcon,
+  CreditCardIcon,
+  UserIcon,
+  Cog6ToothIcon,
+  ArrowRightOnRectangleIcon,
+  Bars3Icon,
+  XMarkIcon,
+  PhoneIcon,
+  HeartIcon,
+  StarIcon,
+  DocumentTextIcon,
+  QuestionMarkCircleIcon
+} from '@heroicons/react/24/outline';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -30,16 +30,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Services', href: '/services', icon: Stethoscope },
-    { name: 'My Patients', href: '/patients', icon: Users },
-    { name: 'My Bookings', href: '/bookings', icon: Calendar },
-    { name: 'Payment History', href: '/payments', icon: CreditCard },
-    { name: 'My Reviews', href: '/reviews', icon: Star },
-    { name: 'Blogs', href: '/blogs', icon: FileText },
-    { name: 'FAQ', href: '/faq', icon: HelpCircle },
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'Dashboard', href: '/dashboard', icon: Squares2X2Icon },
+    { name: 'Services', href: '/services', icon: HeartIcon },
+    { name: 'My Patients', href: '/patients', icon: UsersIcon },
+    { name: 'My Bookings', href: '/bookings', icon: CalendarIcon },
+    { name: 'Payment History', href: '/payments', icon: CreditCardIcon },
+    { name: 'My Reviews', href: '/reviews', icon: StarIcon },
+    { name: 'Blogs', href: '/blogs', icon: DocumentTextIcon },
+    { name: 'FAQ', href: '/faq', icon: QuestionMarkCircleIcon },
+    { name: 'Profile', href: '/profile', icon: UserIcon },
+    { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -65,7 +65,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between h-16 px-6 border-b">
             <Link to="/dashboard" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Stethoscope className="w-5 h-5 text-white" />
+                <HeartIcon className="w-5 h-5 text-white" />
               </div>
               <span className="font-bold text-lg text-gray-900">LKO Health</span>
             </Link>
@@ -73,7 +73,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               className="lg:hidden text-gray-500 hover:text-gray-700"
               onClick={() => setSidebarOpen(false)}
             >
-              <X className="w-6 h-6" />
+              <XMarkIcon className="w-6 h-6" />
             </button>
           </div>
 
@@ -81,7 +81,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="p-4 border-b">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-blue-600" />
+                <UserIcon className="w-6 h-6 text-blue-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
@@ -117,12 +117,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
           {/* Contact (always visible) */}
           <div className="p-4 border-t">
-            <Link
+              <Link
               to="/contact"
               className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => setSidebarOpen(false)}
             >
-              <Phone className="w-5 h-5 flex-shrink-0" />
+              <PhoneIcon className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm font-medium">Contact Us</span>
             </Link>
           </div>
@@ -133,7 +133,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               onClick={handleLogout}
               className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full"
             >
-              <LogOut className="w-5 h-5 flex-shrink-0" />
+              <ArrowRightOnRectangleIcon className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm font-medium">Logout</span>
             </button>
           </div>
@@ -148,11 +148,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             onClick={() => setSidebarOpen(true)}
             className="text-gray-500 hover:text-gray-700"
           >
-            <Menu className="w-6 h-6" />
+            <Bars3Icon className="w-6 h-6" />
           </button>
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Stethoscope className="w-5 h-5 text-white" />
+              <HeartIcon className="w-5 h-5 text-white" />
             </div>
             <span className="font-bold text-lg text-gray-900">LKO Health</span>
           </div>

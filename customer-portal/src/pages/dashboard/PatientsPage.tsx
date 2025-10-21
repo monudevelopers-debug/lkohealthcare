@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, User, Heart, Pill, FileText } from 'lucide-react';
+import { 
+  PlusIcon, 
+  MagnifyingGlassIcon, 
+  PencilIcon, 
+  TrashIcon, 
+  UserIcon, 
+  HeartIcon,
+  BeakerIcon,
+  DocumentTextIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline';
 import { AddPatientForm } from '../../components/patients/AddPatientForm';
 import { patientsApi } from '../../lib/api/patients.api';
 import type { Patient } from '../../types/patient.types';
@@ -60,7 +70,7 @@ export function PatientsPage() {
           onClick={() => setShowAddForm(true)}
           className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <Plus className="w-5 h-5 mr-2" />
+          <PlusIcon className="w-5 h-5 mr-2" />
           Add Patient
         </button>
       </div>
@@ -68,7 +78,7 @@ export function PatientsPage() {
       {/* Search Bar */}
       <div className="bg-white rounded-lg shadow-sm p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             placeholder="Search patients by name..."
@@ -117,7 +127,7 @@ export function PatientsPage() {
         // Empty State
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="w-8 h-8 text-blue-600" />
+            <UserIcon className="w-8 h-8 text-blue-600" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             No Patients Yet
@@ -130,7 +140,7 @@ export function PatientsPage() {
             onClick={() => setShowAddForm(true)}
             className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <PlusIcon className="w-5 h-5 mr-2" />
             Add Your First Patient
           </button>
         </div>
@@ -150,7 +160,7 @@ export function PatientsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-blue-600" />
+                      <UserIcon className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{patient.name}</h3>
@@ -161,7 +171,7 @@ export function PatientsPage() {
                   </div>
                   {patient.isSensitiveData && (
                     <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                      <FileText className="w-3 h-3 mr-1" />
+                      <DocumentTextIcon className="w-3 h-3 mr-1" />
                       Sensitive
                     </span>
                   )}
@@ -202,13 +212,13 @@ export function PatientsPage() {
                     )}
                     {patient.allergies && (
                       <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">
-                        <AlertCircle className="w-3 h-3 mr-1" />
+                        <ExclamationTriangleIcon className="w-3 h-3 mr-1" />
                         Allergies
                       </span>
                     )}
                     {patient.chronicConditions && (
                       <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
-                        <Heart className="w-3 h-3 mr-1" />
+                        <HeartIcon className="w-3 h-3 mr-1" />
                         Conditions
                       </span>
                     )}
@@ -221,7 +231,7 @@ export function PatientsPage() {
                     onClick={() => setSelectedPatient(patient)}
                     className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                   >
-                    <Edit className="w-4 h-4 mr-1" />
+                    <PencilIcon className="w-4 h-4 mr-1" />
                     Edit
                   </button>
                   <button
@@ -229,7 +239,7 @@ export function PatientsPage() {
                     disabled={deleteMutation.isPending}
                     className="inline-flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
               </div>

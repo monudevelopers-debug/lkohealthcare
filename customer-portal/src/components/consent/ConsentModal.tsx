@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { X, Shield, FileText, Lock, AlertCircle } from 'lucide-react';
+import { 
+  XMarkIcon, 
+  ShieldCheckIcon, 
+  DocumentTextIcon, 
+  LockClosedIcon, 
+  ExclamationTriangleIcon 
+} from '@heroicons/react/24/outline';
 import type { ConsentType, RequiredConsent } from '../../types/patient.types';
 
 interface ConsentModalProps {
@@ -37,14 +43,14 @@ export function ConsentModal({ consents, onAcceptAll, onClose, isLoading }: Cons
   const getConsentIcon = (type: ConsentType) => {
     switch (type) {
       case 'TERMS_AND_CONDITIONS':
-        return FileText;
+        return DocumentTextIcon;
       case 'PRIVACY_POLICY':
-        return Shield;
+        return ShieldCheckIcon;
       case 'MEDICAL_DATA_SHARING':
       case 'HIPAA_COMPLIANCE':
-        return Lock;
+        return LockClosedIcon;
       default:
-        return AlertCircle;
+        return ExclamationTriangleIcon;
     }
   };
 
@@ -197,7 +203,7 @@ Last updated: January 2025
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X className="w-6 h-6" />
+            <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
@@ -285,7 +291,7 @@ Last updated: January 2025
           <div className="border-t p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <AlertCircle className="w-4 h-4" />
+                <ExclamationTriangleIcon className="w-4 h-4" />
                 <span>
                   {consents.filter(c => !c.isAccepted).length} consent(s) required
                 </span>

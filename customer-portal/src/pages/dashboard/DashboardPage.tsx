@@ -1,5 +1,11 @@
 import { useAuth } from '../../lib/auth/AuthContext';
-import { Calendar, Users, CreditCard, Clock, ArrowRight } from 'lucide-react';
+import { 
+  CalendarIcon, 
+  UsersIcon, 
+  CreditCardIcon, 
+  ClockIcon, 
+  ArrowRightIcon 
+} from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 
 export function DashboardPage() {
@@ -9,28 +15,28 @@ export function DashboardPage() {
     {
       name: 'My Patients',
       value: '0',
-      icon: Users,
+      icon: UsersIcon,
       color: 'bg-blue-500',
       href: '/patients',
     },
     {
       name: 'Active Bookings',
       value: '0',
-      icon: Calendar,
+      icon: CalendarIcon,
       color: 'bg-green-500',
       href: '/bookings',
     },
     {
       name: 'Completed',
       value: '0',
-      icon: Clock,
+      icon: ClockIcon,
       color: 'bg-purple-500',
       href: '/bookings',
     },
     {
       name: 'Total Spent',
       value: '₹0',
-      icon: CreditCard,
+      icon: CreditCardIcon,
       color: 'bg-orange-500',
       href: '/payments',
     },
@@ -40,14 +46,14 @@ export function DashboardPage() {
     {
       title: 'Add Patient',
       description: 'Add a new family member or patient',
-      icon: Users,
+      icon: UsersIcon,
       href: '/patients',
       color: 'bg-blue-50 text-blue-600',
     },
     {
       title: 'Book Service',
       description: 'Browse and book healthcare services',
-      icon: Calendar,
+      icon: CalendarIcon,
       href: '/services',
       color: 'bg-green-50 text-green-600',
     },
@@ -111,7 +117,7 @@ export function DashboardPage() {
                     </h3>
                     <p className="text-gray-600">{action.description}</p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                  <ArrowRightIcon className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                 </div>
               </Link>
             );
@@ -123,7 +129,7 @@ export function DashboardPage() {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
         <div className="text-center py-12">
-          <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500">No recent activity</p>
           <p className="text-sm text-gray-400 mt-1">
             Your bookings and appointments will appear here

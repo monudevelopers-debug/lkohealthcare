@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { X, User, Heart, AlertCircle, Phone, Shield } from 'lucide-react';
+import { 
+  XMarkIcon, 
+  UserIcon, 
+  HeartIcon, 
+  ExclamationTriangleIcon, 
+  PhoneIcon, 
+  ShieldCheckIcon 
+} from '@heroicons/react/24/outline';
 import { ConsentModal } from '../consent/ConsentModal';
 import { patientsApi, consentsApi } from '../../lib/api/patients.api';
 import type { CreatePatientRequest, Gender, BPStatus, Relationship, ConsentType } from '../../types/patient.types';
@@ -124,7 +131,7 @@ export function AddPatientForm({ onSuccess, onClose }: AddPatientFormProps) {
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X className="w-6 h-6" />
+            <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
@@ -132,7 +139,7 @@ export function AddPatientForm({ onSuccess, onClose }: AddPatientFormProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
@@ -140,7 +147,7 @@ export function AddPatientForm({ onSuccess, onClose }: AddPatientFormProps) {
           {/* Basic Information */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <User className="w-5 h-5 mr-2 text-blue-600" />
+              <UserIcon className="w-5 h-5 mr-2 text-blue-600" />
               Basic Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -276,7 +283,7 @@ export function AddPatientForm({ onSuccess, onClose }: AddPatientFormProps) {
           {/* Medical Information */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Heart className="w-5 h-5 mr-2 text-red-600" />
+              <HeartIcon className="w-5 h-5 mr-2 text-red-600" />
               Medical Information
             </h3>
             <div className="space-y-4">
@@ -342,7 +349,7 @@ export function AddPatientForm({ onSuccess, onClose }: AddPatientFormProps) {
           {/* Emergency Contact */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Phone className="w-5 h-5 mr-2 text-green-600" />
+              <PhoneIcon className="w-5 h-5 mr-2 text-green-600" />
               Emergency Contact
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -391,7 +398,7 @@ export function AddPatientForm({ onSuccess, onClose }: AddPatientFormProps) {
           {/* Privacy Settings */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <ShieldCheckIcon className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
                   <input
