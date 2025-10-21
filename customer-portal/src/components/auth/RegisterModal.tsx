@@ -1,6 +1,7 @@
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon, UserIcon, EnvelopeIcon, PhoneIcon, LockClosedIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -24,7 +25,8 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,12 +78,13 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
           role: 'CUSTOMER',
         });
 
-        handleClose();
-        onSwitchToLogin();
+        // Auto-login after successful registration
+        await login(formData.email, formData.password);
         
-        setTimeout(() => {
-          alert('🎉 Registration successful! Please login with your credentials.');
-        }, 300);
+        handleClose();
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
       } else {
         setError(verifyResponse.data.error || 'OTP verification failed');
       }

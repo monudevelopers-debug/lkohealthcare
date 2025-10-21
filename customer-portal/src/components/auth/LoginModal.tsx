@@ -1,6 +1,7 @@
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon, EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -17,6 +18,7 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +30,8 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
       onClose();
       setEmail('');
       setPassword('');
+      // Redirect to dashboard after successful login
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {

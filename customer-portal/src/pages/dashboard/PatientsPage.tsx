@@ -1,12 +1,50 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit, Trash2, User, Heart, Pill, FileText } from 'lucide-react';
+import { AddPatientForm } from '../../components/patients/AddPatientForm';
+import { patientsApi } from '../../lib/api/patients.api';
+import type { Patient } from '../../types/patient.types';
 
-// Placeholder for now - will connect to API later
 export function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const queryClient = useQueryClient();
 
-  // Placeholder data
-  const patients: any[] = [];
+  // Fetch patients
+  const { data: patients = [], isLoading, refetch } = useQuery({
+    queryKey: ['patients'],
+    queryFn: () => patientsApi.getPatients(),
+  });
+
+  // Delete patient mutation
+  const deleteMutation = useMutation({
+    mutationFn: (patientId: string) => patientsApi.deletePatient(patientId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    },
+  });
+
+  const handleDeletePatient = async (patientId: string, patientName: string) => {
+    if (window.confirm(`Are you sure you want to delete ${patientName}? This action cannot be undone.`)) {
+      try {
+        await deleteMutation.mutateAsync(patientId);
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+        alert('Failed to delete patient');
+      }
+    }
+  };
+
+  const handleAddSuccess = () => {
+    setShowAddForm(false);
+    refetch();
+  };
+
+  // Filter patients by search term
+  const filteredPatients = patients.filter(patient =>
+    patient.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -18,7 +56,10 @@ export function PatientsPage() {
             Manage family members and their medical information
           </p>
         </div>
-        <button className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
           <Plus className="w-5 h-5 mr-2" />
           Add Patient
         </button>
@@ -67,7 +108,12 @@ export function PatientsPage() {
       </div>
 
       {/* Patients List */}
-      {patients.length === 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading patients...</p>
+        </div>
+      ) : filteredPatients.length === 0 ? (
         // Empty State
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -80,7 +126,10 @@ export function PatientsPage() {
             Add your first patient to start managing their healthcare information and
             booking services.
           </p>
-          <button className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="w-5 h-5 mr-2" />
             Add Your First Patient
           </button>
@@ -88,75 +137,113 @@ export function PatientsPage() {
       ) : (
         // Patient Cards
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {patients.map((patient) => (
-            <div
-              key={patient.id}
-              className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
-            >
-              {/* Patient Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-blue-600" />
+          {filteredPatients.map((patient) => {
+            const hasMedicalInfo = patient.isDiabetic || patient.bpStatus !== 'NORMAL' || 
+                                   patient.allergies || patient.chronicConditions;
+            
+            return (
+              <div
+                key={patient.id}
+                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
+              >
+                {/* Patient Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{patient.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {patient.age} years • {patient.gender}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{patient.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      {patient.age} years • {patient.gender}
-                    </p>
-                  </div>
+                  {patient.isSensitiveData && (
+                    <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                      <FileText className="w-3 h-3 mr-1" />
+                      Sensitive
+                    </span>
+                  )}
                 </div>
-              </div>
 
-              {/* Patient Info */}
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <span className="font-medium">Relationship:</span>
-                  <span className="ml-2">{patient.relationship}</span>
-                </div>
-                {patient.bloodGroup && (
+                {/* Patient Info */}
+                <div className="space-y-2 mb-4">
                   <div className="flex items-center text-sm text-gray-600">
-                    <span className="font-medium">Blood Group:</span>
-                    <span className="ml-2">{patient.bloodGroup}</span>
+                    <span className="font-medium">Relationship:</span>
+                    <span className="ml-2 capitalize">{patient.relationshipToCustomer.toLowerCase()}</span>
+                  </div>
+                  {patient.bloodGroup && patient.bloodGroup !== 'UNKNOWN' && (
+                    <div className="flex items-center text-sm text-gray-600">
+                      <span className="font-medium">Blood Group:</span>
+                      <span className="ml-2">{patient.bloodGroup}</span>
+                    </div>
+                  )}
+                  {patient.weight && (
+                    <div className="flex items-center text-sm text-gray-600">
+                      <span className="font-medium">Weight:</span>
+                      <span className="ml-2">{patient.weight} kg</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Medical Indicators */}
+                {hasMedicalInfo && (
+                  <div className="flex items-center flex-wrap gap-2 mb-4">
+                    {patient.isDiabetic && (
+                      <span className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                        Diabetic
+                      </span>
+                    )}
+                    {patient.bpStatus !== 'NORMAL' && (
+                      <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                        BP: {patient.bpStatus}
+                      </span>
+                    )}
+                    {patient.allergies && (
+                      <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Allergies
+                      </span>
+                    )}
+                    {patient.chronicConditions && (
+                      <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                        <Heart className="w-3 h-3 mr-1" />
+                        Conditions
+                      </span>
+                    )}
                   </div>
                 )}
-              </div>
 
-              {/* Medical Indicators */}
-              <div className="flex items-center space-x-2 mb-4">
-                {patient.hasMedications && (
-                  <span className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                    <Pill className="w-3 h-3 mr-1" />
-                    Medications
-                  </span>
-                )}
-                {patient.hasConditions && (
-                  <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
-                    <Heart className="w-3 h-3 mr-1" />
-                    Conditions
-                  </span>
-                )}
-                {patient.hasDocuments && (
-                  <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                    <FileText className="w-3 h-3 mr-1" />
-                    Documents
-                  </span>
-                )}
+                {/* Actions */}
+                <div className="flex items-center space-x-2 pt-4 border-t">
+                  <button
+                    onClick={() => setSelectedPatient(patient)}
+                    className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeletePatient(patient.id, patient.name)}
+                    disabled={deleteMutation.isPending}
+                    className="inline-flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center space-x-2 pt-4 border-t">
-                <button className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
-                </button>
-                <button className="inline-flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+      )}
+
+      {/* Add Patient Modal */}
+      {showAddForm && (
+        <AddPatientForm
+          onSuccess={handleAddSuccess}
+          onClose={() => setShowAddForm(false)}
+        />
       )}
     </div>
   );
