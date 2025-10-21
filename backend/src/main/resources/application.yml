@@ -76,10 +76,20 @@ jwt:
 # Payment Gateway Configuration
 payment:
   gateway:
-    mode: ${PAYMENT_GATEWAY_MODE:DUMMY}  # DUMMY for development, RAZORPAY for production
+    mode: ${PAYMENT_GATEWAY_MODE:DUMMY}  # DUMMY, PAYTM, RAZORPAY, STRIPE
     dummy:
       success-rate: ${DUMMY_PAYMENT_SUCCESS_RATE:90}  # 90% success rate
       processing-time: ${DUMMY_PAYMENT_PROCESSING_TIME:2000}  # 2 seconds
+  paytm:
+    merchant-id: ${PAYTM_MERCHANT_ID:}
+    merchant-key: ${PAYTM_MERCHANT_KEY:}
+    website: ${PAYTM_WEBSITE:WEBSTAGING}
+    industry-type: ${PAYTM_INDUSTRY_TYPE:Retail}
+    channel-id-web: ${PAYTM_CHANNEL_ID_WEB:WEB}
+    channel-id-mobile: ${PAYTM_CHANNEL_ID_MOBILE:WAP}
+    callback-url: ${PAYTM_CALLBACK_URL:http://localhost:8080/api/payments/paytm/callback}
+    transaction-url: ${PAYTM_TRANSACTION_URL:https://securegw-stage.paytm.in/order/process}
+    status-query-url: ${PAYTM_STATUS_QUERY_URL:https://securegw-stage.paytm.in/order/status}
   razorpay:
     key-id: ${RAZORPAY_KEY_ID:}
     key-secret: ${RAZORPAY_KEY_SECRET:}

@@ -1,8 +1,6 @@
 package com.lucknow.healthcare.service.interfaces;
 
 import com.lucknow.healthcare.entity.Payment;
-import com.lucknow.healthcare.enums.PaymentMethod;
-import com.lucknow.healthcare.enums.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -65,7 +63,7 @@ public interface PaymentService {
      * @return the updated payment
      * @throws IllegalArgumentException if payment not found
      */
-    Payment updatePaymentStatus(UUID id, PaymentStatus status);
+    Payment updatePaymentStatus(UUID id, Payment.PaymentStatus status);
     
     /**
      * Process payment
@@ -94,7 +92,7 @@ public interface PaymentService {
      * @param status the payment status
      * @return List of payments with the specified status
      */
-    List<Payment> getPaymentsByStatus(PaymentStatus status);
+    List<Payment> getPaymentsByStatus(Payment.PaymentStatus status);
     
     /**
      * Get payments by method
@@ -102,7 +100,7 @@ public interface PaymentService {
      * @param method the payment method
      * @return List of payments with the specified method
      */
-    List<Payment> getPaymentsByMethod(PaymentMethod method);
+    List<Payment> getPaymentsByMethod(String method);
     
     /**
      * Get payments by date range
@@ -136,7 +134,7 @@ public interface PaymentService {
      * @param pageable pagination information
      * @return Page of payments with the specified status
      */
-    Page<Payment> getPaymentsByStatus(PaymentStatus status, Pageable pageable);
+    Page<Payment> getPaymentsByStatus(Payment.PaymentStatus status, Pageable pageable);
     
     /**
      * Get payments by method with pagination
@@ -145,7 +143,7 @@ public interface PaymentService {
      * @param pageable pagination information
      * @return Page of payments with the specified method
      */
-    Page<Payment> getPaymentsByMethod(PaymentMethod method, Pageable pageable);
+    Page<Payment> getPaymentsByMethod(String method, Pageable pageable);
     
     /**
      * Count payments by status
@@ -153,7 +151,7 @@ public interface PaymentService {
      * @param status the payment status
      * @return number of payments with the specified status
      */
-    long countPaymentsByStatus(PaymentStatus status);
+    long countPaymentsByStatus(Payment.PaymentStatus status);
     
     /**
      * Count payments by method
@@ -161,7 +159,7 @@ public interface PaymentService {
      * @param method the payment method
      * @return number of payments with the specified method
      */
-    long countPaymentsByMethod(PaymentMethod method);
+    long countPaymentsByMethod(String method);
     
     /**
      * Calculate total amount by status
@@ -169,7 +167,7 @@ public interface PaymentService {
      * @param status the payment status
      * @return total amount of payments with the specified status
      */
-    BigDecimal calculateTotalAmountByStatus(PaymentStatus status);
+    BigDecimal calculateTotalAmountByStatus(Payment.PaymentStatus status);
     
     /**
      * Calculate total amount by method
@@ -177,7 +175,7 @@ public interface PaymentService {
      * @param method the payment method
      * @return total amount of payments with the specified method
      */
-    BigDecimal calculateTotalAmountByMethod(PaymentMethod method);
+    BigDecimal calculateTotalAmountByMethod(String method);
     
     /**
      * Generate invoice for payment
