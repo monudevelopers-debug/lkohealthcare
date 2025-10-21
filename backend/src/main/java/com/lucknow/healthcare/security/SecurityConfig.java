@@ -72,6 +72,8 @@ public class SecurityConfig {
                 .requestMatchers("/providers/**").hasAnyRole("ADMIN", "PROVIDER")
                 .requestMatchers("/bookings/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/booking-rejections/**").hasAnyRole("ADMIN", "PROVIDER")
+                .requestMatchers("/patients/**").hasAnyRole("ADMIN", "USER", "CUSTOMER")
+                .requestMatchers("/consents/**").hasAnyRole("ADMIN", "USER", "CUSTOMER")
                 .requestMatchers("/payments/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/reviews/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .anyRequest().authenticated()
