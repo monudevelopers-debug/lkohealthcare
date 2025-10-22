@@ -5,10 +5,13 @@ import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Random;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class TwilioService {
@@ -22,7 +25,11 @@ public class TwilioService {
     @Value("${twilio.phone.number:}")
     private String twilioPhoneNumber;
     
-    private boolean developmentMode = false;
+    @Value("${twilio.development-mode:true}")
+    private boolean developmentMode;
+    
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
     
     public TwilioService() {
         // Initialize Twilio with credentials from environment variables
@@ -54,6 +61,15 @@ public class TwilioService {
         
         // Generate 6-digit OTP
         String otp = generateOTP();
+        
+        // Store OTP in Redis with 5-minute expiration
+        String otpKey = "otp:" + phoneNumber;
+        try {
+            redisTemplate.opsForValue().set(otpKey, otp, 5, TimeUnit.MINUTES);
+            System.out.println("✅ OTP stored in Redis for " + phoneNumber + " with 5-minute expiration");
+        } catch (Exception e) {
+            System.err.println("❌ Failed to store OTP in Redis: " + e.getMessage());
+        }
         
         if (developmentMode) {
             // Development mode - just log the OTP
@@ -116,39 +132,38 @@ public class TwilioService {
     public Map<String, Object> verifyOTP(String phoneNumber, String otp) {
         Map<String, Object> result = new HashMap<>();
         
-        if (developmentMode) {
-            // In development mode, accept any 6-digit OTP
-            if (otp != null && otp.length() == 6 && otp.matches("\\d{6}")) {
-                result.put("verified", true);
-                result.put("message", "OTP verified successfully (development mode)");
-                System.out.println("🔧 DEVELOPMENT MODE - OTP verification for " + phoneNumber + ": " + otp + " - ACCEPTED");
-            } else {
-                result.put("verified", false);
-                result.put("error", "Invalid OTP format");
-                System.out.println("🔧 DEVELOPMENT MODE - OTP verification for " + phoneNumber + ": " + otp + " - REJECTED");
-            }
-            return result;
-        }
+        // Format phone number
+        phoneNumber = formatPhoneNumber(phoneNumber);
         
-        // In production mode, implement actual OTP verification logic
-        // For now, we'll use a simple validation
         try {
-            // This is a placeholder - in real implementation, you would:
-            // 1. Store OTPs in database with expiration
-            // 2. Verify against stored OTP
-            // 3. Check expiration time
+            // Get stored OTP from Redis
+            String otpKey = "otp:" + phoneNumber;
+            String storedOTP = redisTemplate.opsForValue().get(otpKey);
             
-            if (otp != null && otp.length() == 6 && otp.matches("\\d{6}")) {
+            if (storedOTP == null) {
+                result.put("verified", false);
+                result.put("error", "OTP not found or expired. Please request a new OTP.");
+                System.out.println("❌ OTP verification failed for " + phoneNumber + " - OTP not found or expired");
+                return result;
+            }
+            
+            // Check if OTP matches
+            if (storedOTP.equals(otp)) {
+                // OTP is correct, remove it from Redis to prevent reuse
+                redisTemplate.delete(otpKey);
                 result.put("verified", true);
                 result.put("message", "OTP verified successfully");
+                System.out.println("✅ OTP verification successful for " + phoneNumber);
             } else {
                 result.put("verified", false);
-                result.put("error", "Invalid OTP");
+                result.put("error", "Invalid OTP. Please check and try again.");
+                System.out.println("❌ OTP verification failed for " + phoneNumber + " - Invalid OTP");
             }
             
         } catch (Exception e) {
             result.put("verified", false);
             result.put("error", "OTP verification failed: " + e.getMessage());
+            System.err.println("❌ OTP verification error for " + phoneNumber + ": " + e.getMessage());
         }
         
         return result;
