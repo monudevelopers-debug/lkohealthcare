@@ -1,9 +1,7 @@
 package com.lucknow.healthcare.config;
 
-import io.github.cdimascio.dotenv.Dotenv;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.PropertySource;
 
 /**
  * Environment Configuration
@@ -14,15 +12,7 @@ import org.springframework.context.annotation.Primary;
  * @version 1.0.0
  */
 @Configuration
+@PropertySource(value = "file:./.env", ignoreResourceNotFound = true)
 public class EnvironmentConfig {
-    
-    @Bean
-    @Primary
-    public Dotenv dotenv() {
-        return Dotenv.configure()
-                .directory("./")
-                .ignoreIfMalformed()
-                .ignoreIfMissing()
-                .load();
-    }
+    // This configuration class loads the .env file as a property source
 }

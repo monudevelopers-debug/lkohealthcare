@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import io.github.cdimascio.dotenv.Dotenv;
 
 import java.util.Random;
 import java.util.Map;
@@ -18,52 +17,30 @@ import jakarta.annotation.PostConstruct;
 @Service
 public class TwilioService {
     
-    @Value("${twilio.account.sid:}")
+    @Value("${TWILIO_ACCOUNT_SID:}")
     private String accountSid;
     
-    @Value("${twilio.auth.token:}")
+    @Value("${TWILIO_AUTH_TOKEN:}")
     private String authToken;
     
-    @Value("${twilio.phone.number:}")
+    @Value("${TWILIO_PHONE_NUMBER:}")
     private String twilioPhoneNumber;
     
-    @Value("${twilio.development-mode:true}")
+    @Value("${TWILIO_DEVELOPMENT_MODE:true}")
     private boolean developmentMode;
     
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
     
-    @Autowired
-    private Dotenv dotenv;
-    
     @PostConstruct
     public void init() {
-        // Load credentials from .env file
-        String envAccountSid = dotenv.get("TWILIO_ACCOUNT_SID");
-        String envAuthToken = dotenv.get("TWILIO_AUTH_TOKEN");
-        String envPhoneNumber = dotenv.get("TWILIO_PHONE_NUMBER");
-        String envDevMode = dotenv.get("TWILIO_DEVELOPMENT_MODE");
-        
-        // Override with .env values if available
-        if (envAccountSid != null && !envAccountSid.trim().isEmpty()) {
-            accountSid = envAccountSid;
-        }
-        if (envAuthToken != null && !envAuthToken.trim().isEmpty()) {
-            authToken = envAuthToken;
-        }
-        if (envPhoneNumber != null && !envPhoneNumber.trim().isEmpty()) {
-            twilioPhoneNumber = envPhoneNumber;
-        }
-        if (envDevMode != null) {
-            developmentMode = Boolean.parseBoolean(envDevMode);
-        }
-        
-        // Initialize Twilio with credentials
+        // Initialize Twilio with credentials from .env file
         try {
             if (!isPlaceholderCredentials()) {
                 Twilio.init(accountSid, authToken);
                 System.out.println("✅ Twilio initialized successfully with credentials from .env file");
                 System.out.println("📱 Twilio Phone Number: " + twilioPhoneNumber);
+                System.out.println("🔧 Development Mode: " + developmentMode);
             } else {
                 System.err.println("⚠️  Twilio credentials not configured - using development mode");
                 developmentMode = true;
