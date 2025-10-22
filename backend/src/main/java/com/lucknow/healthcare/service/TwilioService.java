@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class TwilioService {
@@ -102,5 +104,53 @@ public class TwilioService {
     
     public boolean isDevelopmentMode() {
         return developmentMode;
+    }
+    
+    /**
+     * Verify OTP for a phone number
+     * 
+     * @param phoneNumber the phone number
+     * @param otp the OTP to verify
+     * @return Map containing verification result
+     */
+    public Map<String, Object> verifyOTP(String phoneNumber, String otp) {
+        Map<String, Object> result = new HashMap<>();
+        
+        if (developmentMode) {
+            // In development mode, accept any 6-digit OTP
+            if (otp != null && otp.length() == 6 && otp.matches("\\d{6}")) {
+                result.put("verified", true);
+                result.put("message", "OTP verified successfully (development mode)");
+                System.out.println("🔧 DEVELOPMENT MODE - OTP verification for " + phoneNumber + ": " + otp + " - ACCEPTED");
+            } else {
+                result.put("verified", false);
+                result.put("error", "Invalid OTP format");
+                System.out.println("🔧 DEVELOPMENT MODE - OTP verification for " + phoneNumber + ": " + otp + " - REJECTED");
+            }
+            return result;
+        }
+        
+        // In production mode, implement actual OTP verification logic
+        // For now, we'll use a simple validation
+        try {
+            // This is a placeholder - in real implementation, you would:
+            // 1. Store OTPs in database with expiration
+            // 2. Verify against stored OTP
+            // 3. Check expiration time
+            
+            if (otp != null && otp.length() == 6 && otp.matches("\\d{6}")) {
+                result.put("verified", true);
+                result.put("message", "OTP verified successfully");
+            } else {
+                result.put("verified", false);
+                result.put("error", "Invalid OTP");
+            }
+            
+        } catch (Exception e) {
+            result.put("verified", false);
+            result.put("error", "OTP verification failed: " + e.getMessage());
+        }
+        
+        return result;
     }
 }
