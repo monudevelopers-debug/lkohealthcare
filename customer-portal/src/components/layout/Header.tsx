@@ -36,13 +36,13 @@ export const Header = () => {
 
   return (
     <>
-      <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-200">
+      <header className="bg-white shadow-lg sticky top-0 z-40 border-b border-blue-200 animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center flex-shrink-0">
               <a href="/" className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-slate-800 rounded-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
                   <span className="text-white font-bold text-xl">L</span>
                 </div>
                 <div className="hidden sm:block">
@@ -60,7 +60,7 @@ export const Header = () => {
                 <a
                   key={item.name}
                   href={item.href}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-300 hover:scale-105"
                 >
                   {item.name}
                 </a>
@@ -69,6 +69,19 @@ export const Header = () => {
 
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center space-x-3">
+              {/* Provider Portal Link */}
+              <a
+                href="http://localhost:5176"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-300 hover:scale-105"
+              >
+                <span>For Providers</span>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+              
               {isAuthenticated ? (
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg">
@@ -132,6 +145,20 @@ export const Header = () => {
                     {item.name}
                   </a>
                 ))}
+                
+                {/* Provider Portal Link - Mobile */}
+                <a
+                  href="http://localhost:5176"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 px-4 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <span>For Providers</span>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
                 
                 {isAuthenticated ? (
                   <div className="pt-4 border-t border-gray-200 space-y-2">

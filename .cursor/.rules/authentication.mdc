@@ -1,0 +1,40 @@
+---
+description: Authentication and authorization patterns across frontend and backend
+alwaysApply: false
+---
+
+# Authentication Architecture
+
+## Frontend Authentication Flow
+1. User navigates to /login
+2. Fills email and password fields
+3. Submits form to backend `/api/auth/login`
+4. Backend returns JWT token
+5. Frontend stores token in localStorage or HttpOnly cookie
+6. Frontend redirects to role-appropriate dashboard
+7. Token included in Authorization header for all API requests
+
+## Backend Authentication Flow
+1. Receive login request at `/api/auth/login`
+2. Validate credentials against database
+3. Generate JWT with user ID, role, and expiration
+4. Return token in response
+5. Validate token on protected endpoints using SecurityConfig
+6. Return 401 for invalid/expired tokens
+7. Return 403 for insufficient permissions
+
+## Role-Based Access
+- CUSTOMER role: Access to customer portal only
+- PROVIDER role: Access to provider dashboard only
+- ADMIN role: Access to admin dashboard and elevated permissions
+
+## Session Management
+- JWT expiration: Check application.yml for configured time
+- Refresh token logic: Implement if supported
+- Logout: Clear token from storage and redirect to login
+
+## Testing Authentication
+- Use existing test users with known credentials
+- Never create users programmatically in E2E tests
+- Never Mock authentication state when backend is unavailable
+- Test token persistence and expiration handling

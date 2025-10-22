@@ -292,7 +292,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public List<Booking> getBookingsByProvider(Provider provider) {
-        return bookingRepository.findByProvider(provider);
+        return bookingRepository.findByProviderWithPatient(provider);
     }
     
     @Override
@@ -418,7 +418,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public Page<Booking> getBookingsByProvider(Provider provider, Pageable pageable) {
-        return bookingRepository.findByProvider(provider, pageable);
+        return bookingRepository.findByProviderWithPatient(provider, pageable);
     }
     
     @Override

@@ -5,12 +5,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -65,6 +70,7 @@ public class JwtUtil {
     
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("authorities", userDetails.getAuthorities());
         return createToken(claims, userDetails.getUsername());
     }
     
@@ -102,5 +108,37 @@ public class JwtUtil {
     
     public Long getExpiration() {
         return expiration;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public Collection<? extends GrantedAuthority> getAuthoritiesFromToken(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            Object authoritiesObj = claims.get("authorities");
+            
+            if (authoritiesObj == null) {
+                return new ArrayList<>();
+            }
+            
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            
+            if (authoritiesObj instanceof List) {
+                List<?> authoritiesList = (List<?>) authoritiesObj;
+                for (Object authObj : authoritiesList) {
+                    if (authObj instanceof Map) {
+                        Map<?, ?> authorityMap = (Map<?, ?>) authObj;
+                        Object authority = authorityMap.get("authority");
+                        if (authority instanceof String) {
+                            authorities.add(new SimpleGrantedAuthority((String) authority));
+                        }
+                    }
+                }
+            }
+            
+            return authorities;
+        } catch (Exception e) {
+            System.err.println("Error extracting authorities from token: " + e.getMessage());
+            return new ArrayList<>();
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.lucknow.healthcare.service.interfaces;
 
 import com.lucknow.healthcare.entity.Provider;
+import com.lucknow.healthcare.entity.User;
 import com.lucknow.healthcare.enums.AvailabilityStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,16 @@ public interface ProviderService {
      * @throws IllegalArgumentException if email already exists
      */
     Provider createProvider(Provider provider);
+    
+    /**
+     * Create a new provider linked to an existing user
+     * 
+     * @param user the existing user
+     * @param provider the provider to create
+     * @return the created provider
+     * @throws IllegalArgumentException if email already exists
+     */
+    Provider createProviderWithUser(User user, Provider provider);
     
     /**
      * Find provider by ID

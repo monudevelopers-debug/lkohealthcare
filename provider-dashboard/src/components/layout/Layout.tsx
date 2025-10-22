@@ -11,7 +11,8 @@ import {
   BarChart3, 
   LogOut,
   Menu,
-  X
+  X,
+  CalendarDays
 } from 'lucide-react';
 
 const Layout: React.FC = () => {
@@ -23,6 +24,7 @@ const Layout: React.FC = () => {
   const nav = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/bookings', label: 'Manage Bookings', icon: Calendar },
+    { to: '/calendar', label: 'My Schedule', icon: CalendarDays },
     { to: '/bookings/history', label: 'Booking History', icon: History },
     { to: '/services', label: 'My Services', icon: Tag },
     { to: '/reviews', label: 'Reviews', icon: Star },

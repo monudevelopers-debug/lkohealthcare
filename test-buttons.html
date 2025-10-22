@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { margin: 10px; padding: 10px 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Provider Dashboard Button Test</h1>
+    
+    <div class="test-section">
+        <h2>Authentication Test</h2>
+        <button onclick="testLogin()">Test Login</button>
+        <div id="login-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>API Test</h2>
+        <button onclick="testAcceptBooking()">Test Accept Booking</button>
+        <div id="api-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Frontend Test</h2>
+        <p>Open the provider dashboard at <a href="http://localhost:5174" target="_blank">http://localhost:5174</a></p>
+        <p>Login with: dr.sharma@lucknowhealthcare.com / password123</p>
+        <p>Go to Bookings page and check browser console for debugging messages</p>
+    </div>
+
+    <script>
+        let token = '';
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.innerHTML = '<div class="info">Testing login...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'dr.sharma@lucknowhealthcare.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    resultDiv.innerHTML = `<div class="success">✅ Login successful! Token: ${token.substring(0, 50)}...</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Login failed: ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testAcceptBooking() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="info">Testing accept booking...</div>';
+            
+            if (!token) {
+                resultDiv.innerHTML = '<div class="error">❌ Please login first!</div>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/bookings/f7eaf5f1-919a-4bd7-ba88-730e8e4af625/accept', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="success">✅ Booking accepted! Status: ${data.status}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ API failed: ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

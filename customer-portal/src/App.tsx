@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './lib/auth/AuthContext';
+import { PatientProvider } from './lib/context/PatientContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -12,6 +13,9 @@ import { ServicesPage } from './pages/dashboard/ServicesPage';
 import { ServiceDetailPage } from './pages/dashboard/ServiceDetailPage';
 import { PatientsPage } from './pages/dashboard/PatientsPage';
 import { BookingsPage } from './pages/dashboard/BookingsPage';
+import { PaymentHistoryPage } from './pages/dashboard/PaymentHistoryPage';
+import { FAQPage } from './pages/dashboard/FAQPage';
+import { BlogsPage } from './pages/dashboard/BlogsPage';
 import { ProfilePage } from './pages/dashboard/ProfilePage';
 import { DebugPage } from './pages/dashboard/DebugPage';
 
@@ -30,7 +34,8 @@ function App() {
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-        <Router>
+          <PatientProvider>
+            <Router>
           <Routes>
             {/* Public routes with Header/Footer */}
             <Route path="/" element={
@@ -124,7 +129,7 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <DashboardLayout>
-                        <div className="p-8 text-center">Payment History Coming Soon</div>
+                        <PaymentHistoryPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   } 
@@ -144,7 +149,7 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <DashboardLayout>
-                        <div className="p-8 text-center">Blogs Coming Soon</div>
+                        <BlogsPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   } 
@@ -154,7 +159,7 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <DashboardLayout>
-                        <div className="p-8 text-center">FAQ Coming Soon</div>
+                        <FAQPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   } 
@@ -170,7 +175,8 @@ function App() {
                   } 
                 />
               </Routes>
-          </Router>
+            </Router>
+          </PatientProvider>
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>

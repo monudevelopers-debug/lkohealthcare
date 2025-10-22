@@ -26,9 +26,9 @@ export function AddPatientForm({ onSuccess, onClose }: AddPatientFormProps) {
     name: '',
     age: 0,
     gender: 'MALE',
-    weight: undefined,
-    height: undefined,
-    bloodGroup: '',
+    weight: 0,
+    height: 0,
+    bloodGroup: 'UNKNOWN',
     isDiabetic: false,
     bpStatus: 'NORMAL',
     allergies: '',
@@ -223,11 +223,10 @@ export function AddPatientForm({ onSuccess, onClose }: AddPatientFormProps) {
                   Blood Group
                 </label>
                 <select
-                  value={formData.bloodGroup || ''}
+                  value={formData.bloodGroup}
                   onChange={(e) => handleChange('bloodGroup', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Select blood group</option>
                   <option value="A+">A+</option>
                   <option value="A-">A-</option>
                   <option value="B+">B+</option>

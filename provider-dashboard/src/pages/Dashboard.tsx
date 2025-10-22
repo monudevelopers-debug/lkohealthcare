@@ -19,20 +19,28 @@ const Dashboard: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('today');
 
   // Fetch provider statistics
-  const { data: stats, isLoading: statsLoading } = useQuery(
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery(
     ['provider-stats', selectedPeriod],
     () => getProviderStats(selectedPeriod),
     {
       refetchInterval: 30000, // Refetch every 30 seconds
+      retry: false, // Don't retry on error
+      onError: (error) => {
+        console.warn('Failed to fetch provider stats:', error);
+      }
     }
   );
 
   // Fetch recent bookings
-  const { data: recentBookings, isLoading: bookingsLoading } = useQuery(
+  const { data: recentBookings, isLoading: bookingsLoading, error: bookingsError } = useQuery(
     'recent-bookings',
     () => getRecentBookings(10),
     {
       refetchInterval: 10000, // Refetch every 10 seconds
+      retry: false, // Don't retry on error
+      onError: (error) => {
+        console.warn('Failed to fetch recent bookings:', error);
+      }
     }
   );
 

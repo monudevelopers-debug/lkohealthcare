@@ -1,7 +1,10 @@
 package com.lucknow.healthcare.controller;
 
+import com.lucknow.healthcare.entity.Booking;
 import com.lucknow.healthcare.entity.Review;
+import com.lucknow.healthcare.service.interfaces.BookingService;
 import com.lucknow.healthcare.service.interfaces.ReviewService;
+import com.lucknow.healthcare.util.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,19 +34,68 @@ public class ReviewController {
     @Autowired
     private ReviewService reviewService;
     
+    @Autowired
+    private BookingService bookingService;
+    
+    /**
+     * DTO for creating a review
+     */
+    public static class CreateReviewRequest {
+        private String bookingId;
+        private Integer rating;
+        private String comment;
+        
+        public String getBookingId() { return bookingId; }
+        public void setBookingId(String bookingId) { this.bookingId = bookingId; }
+        
+        public Integer getRating() { return rating; }
+        public void setRating(Integer rating) { this.rating = rating; }
+        
+        public String getComment() { return comment; }
+        public void setComment(String comment) { this.comment = comment; }
+    }
+    
     /**
      * Create a new review
      * 
-     * @param review the review to create
+     * @param request the review request with bookingId, rating, and comment
      * @return ResponseEntity containing the created review
      */
     @PostMapping
-    public ResponseEntity<Review> createReview(@RequestBody Review review) {
+    public ResponseEntity<?> createReview(@RequestBody CreateReviewRequest request) {
         try {
+            // Get current user
+            UUID userId = SecurityUtils.getCurrentUserId();
+            
+            // Get booking
+            Optional<Booking> bookingOpt = bookingService.findById(UUID.fromString(request.getBookingId()));
+            if (bookingOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("Booking not found");
+            }
+            
+            Booking booking = bookingOpt.get();
+            
+            // Verify user is the booking owner
+            if (!booking.getUser().getId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only review your own bookings");
+            }
+            
+            // Create review entity
+            Review review = new Review();
+            review.setBooking(booking);
+            review.setUser(booking.getUser());
+            review.setProvider(booking.getProvider());
+            review.setRating(request.getRating());
+            review.setComment(request.getComment());
+            
             Review createdReview = reviewService.createReview(review);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdReview);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating review: " + e.getMessage());
         }
     }
     

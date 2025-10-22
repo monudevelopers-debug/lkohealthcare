@@ -31,6 +31,8 @@ const Bookings: React.FC = () => {
   const [actionType, setActionType] = useState<'accept' | 'reject' | 'start' | 'complete'>('accept');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number; right: number }>({ right: 0 });
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [completionNotes, setCompletionNotes] = useState('');
   
   const queryClient = useQueryClient();
 
@@ -59,9 +61,13 @@ const Bookings: React.FC = () => {
     (bookingId: string) => acceptBooking(bookingId),
     {
       onSuccess: () => {
+        console.log('Accept booking success');
         queryClient.invalidateQueries(['my-bookings']);
         setShowActionModal(false);
         setSelectedBooking(null);
+      },
+      onError: (error) => {
+        console.error('Accept booking error:', error);
       },
     }
   );
@@ -72,9 +78,13 @@ const Bookings: React.FC = () => {
       rejectBooking(bookingId, reason),
     {
       onSuccess: () => {
+        console.log('Reject booking success');
         queryClient.invalidateQueries(['my-bookings']);
         setShowActionModal(false);
         setSelectedBooking(null);
+      },
+      onError: (error) => {
+        console.error('Reject booking error:', error);
       },
     }
   );
@@ -84,9 +94,13 @@ const Bookings: React.FC = () => {
     (bookingId: string) => startService(bookingId),
     {
       onSuccess: () => {
+        console.log('Start service success');
         queryClient.invalidateQueries(['my-bookings']);
         setShowActionModal(false);
         setSelectedBooking(null);
+      },
+      onError: (error) => {
+        console.error('Start service error:', error);
       },
     }
   );
@@ -97,9 +111,13 @@ const Bookings: React.FC = () => {
       completeService(bookingId, notes),
     {
       onSuccess: () => {
+        console.log('Complete service success');
         queryClient.invalidateQueries(['my-bookings']);
         setShowActionModal(false);
         setSelectedBooking(null);
+      },
+      onError: (error) => {
+        console.error('Complete service error:', error);
       },
     }
   );
@@ -117,6 +135,11 @@ const Bookings: React.FC = () => {
       return () => document.removeEventListener('click', handleClickOutside);
     }
   }, [openMenuId]);
+
+  // Debug modal state
+  useEffect(() => {
+    console.log('Modal state changed:', { showActionModal, selectedBooking: selectedBooking?.id, actionType });
+  }, [showActionModal, selectedBooking, actionType]);
 
   const handleMenuClick = (bookingId: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -195,26 +218,41 @@ const Bookings: React.FC = () => {
   };
 
   const handleBookingAction = (bookingId: string, action: 'accept' | 'reject' | 'start' | 'complete') => {
-    setSelectedBooking(bookings.find(b => b.id === bookingId) || null);
+    console.log('handleBookingAction called:', { bookingId, action });
+    const booking = (bookingsData?.content || []).find(b => b.id === bookingId);
+    console.log('Found booking:', booking);
+    setSelectedBooking(booking || null);
     setActionType(action);
+    setRejectionReason('');
+    setCompletionNotes('');
     setShowActionModal(true);
+    console.log('Modal should be shown now');
   };
 
   const handleActionSubmit = () => {
-    if (!selectedBooking) return;
+    console.log('handleActionSubmit called:', { selectedBooking, actionType, rejectionReason, completionNotes });
+    if (!selectedBooking) {
+      console.log('No selected booking, returning');
+      return;
+    }
 
+    console.log('Calling mutation for action:', actionType);
     switch (actionType) {
       case 'accept':
+        console.log('Calling acceptBookingMutation');
         acceptBookingMutation.mutate(selectedBooking.id);
         break;
       case 'reject':
-        rejectBookingMutation.mutate({ bookingId: selectedBooking.id });
+        console.log('Calling rejectBookingMutation');
+        rejectBookingMutation.mutate({ bookingId: selectedBooking.id, reason: rejectionReason });
         break;
       case 'start':
+        console.log('Calling startServiceMutation');
         startServiceMutation.mutate(selectedBooking.id);
         break;
       case 'complete':
-        completeServiceMutation.mutate({ bookingId: selectedBooking.id });
+        console.log('Calling completeServiceMutation');
+        completeServiceMutation.mutate({ bookingId: selectedBooking.id, notes: completionNotes });
         break;
     }
   };
@@ -328,20 +366,20 @@ const Bookings: React.FC = () => {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {booking.user.name}
+                            {booking.user?.name || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {booking.user.phone}
+                            {booking.user?.phone || 'N/A'}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {booking.service.name}
+                        {booking.service?.name || 'N/A'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {booking.service.category.name}
+                        {booking.service?.category?.name || 'No Category'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -521,6 +559,8 @@ const Bookings: React.FC = () => {
                   Reason for Rejection (Optional)
                 </label>
                 <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Enter reason for rejection..."
@@ -534,6 +574,8 @@ const Bookings: React.FC = () => {
                   Service Notes (Optional)
                 </label>
                 <textarea
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Enter any notes about the service provided..."
@@ -543,7 +585,11 @@ const Bookings: React.FC = () => {
 
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setShowActionModal(false)}
+                onClick={() => {
+                  setShowActionModal(false);
+                  setRejectionReason('');
+                  setCompletionNotes('');
+                }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
               >
                 Cancel
@@ -656,6 +702,88 @@ const Bookings: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Patient Information */}
+              {(selectedBooking.patient || selectedBooking.specialInstructions?.includes('Patient ID:')) && (
+                <div className="bg-pink-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <User className="w-5 h-5 mr-2" />
+                    Patient Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedBooking.patient ? (
+                      <>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Patient Name</label>
+                          <p className="text-sm text-gray-900 font-semibold bg-white px-3 py-2 rounded border">{selectedBooking.patient.name}</p>
+                        </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Age / Gender</label>
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.age} years / {selectedBooking.patient.gender}</p>
+                    </div>
+                    {selectedBooking.patient.bloodGroup && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Blood Group</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.bloodGroup}</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Relationship</label>
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.relationshipToCustomer}</p>
+                    </div>
+                    {selectedBooking.patient.isDiabetic && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Medical Condition</label>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          Diabetic
+                        </span>
+                      </div>
+                    )}
+                    {selectedBooking.patient.bpStatus !== 'NORMAL' && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">BP Status</label>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          {selectedBooking.patient.bpStatus} BP
+                        </span>
+                      </div>
+                    )}
+                    {selectedBooking.patient.allergies && (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Allergies</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.allergies}</p>
+                      </div>
+                    )}
+                    {selectedBooking.patient.chronicConditions && (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Chronic Conditions</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.chronicConditions}</p>
+                      </div>
+                    )}
+                    {selectedBooking.patient.emergencyContactName && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Emergency Contact</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.emergencyContactName}</p>
+                      </div>
+                    )}
+                    {selectedBooking.patient.emergencyContactRelation && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Emergency Relation</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.emergencyContactRelation}</p>
+                      </div>
+                    )}
+                    {/* Note: Emergency phone number is hidden for provider dashboard as per requirement */}
+                      </>
+                    ) : (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Patient Information</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">
+                          Patient details are not available. Please check the special instructions for patient ID: {selectedBooking.specialInstructions?.match(/Patient ID: ([a-f0-9-]+)/)?.[1] || 'Not found'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Service Information */}
               <div className="bg-green-50 p-4 rounded-lg">

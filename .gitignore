@@ -357,3 +357,4 @@ dist
 # Temporary files
 tmp/
 temp/
+**/.env

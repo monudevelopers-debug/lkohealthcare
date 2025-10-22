@@ -16,12 +16,19 @@ apiClient.interceptors.request.use(
       try {
         const { token } = JSON.parse(auth);
         if (token) {
+          // Ensure headers object exists
+          config.headers = config.headers || {};
           config.headers.Authorization = `Bearer ${token}`;
+          console.log('✅ Token attached to request:', config.url);
+        } else {
+          console.warn('⚠️ No token found in auth object');
         }
       } catch (error) {
-        console.error('Failed to parse auth token:', error);
+        console.error('❌ Failed to parse auth token:', error);
         localStorage.removeItem('lhc_auth');
       }
+    } else {
+      console.warn('⚠️ No auth found in localStorage for request:', config.url);
     }
     return config;
   },
@@ -40,6 +47,12 @@ apiClient.interceptors.response.use(
       
       console.log('401 Unauthorized - API:', originalRequest.url);
       console.log('401 Error Response:', error.response?.data);
+      
+      // Check if this is an auth endpoint - don't redirect for login failures
+      if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register')) {
+        console.log('Login/Register failed - returning error without redirect');
+        return Promise.reject(error);
+      }
       
       // Try to refresh token
       try {
@@ -75,11 +88,15 @@ apiClient.interceptors.response.use(
         // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, logout user
-        console.error('Token refresh failed, logging out:', refreshError);
-        localStorage.removeItem('lhc_auth');
-        window.location.href = '/';
+      } catch (refreshError: any) {
+        // Only redirect if refresh token is actually invalid
+        if (refreshError.response?.status === 401) {
+          console.error('Token refresh failed - invalid refresh token, logging out');
+          localStorage.removeItem('lhc_auth');
+          window.location.href = '/';
+        } else {
+          console.error('Token refresh failed but not auth issue:', refreshError);
+        }
         return Promise.reject(refreshError);
       }
     }

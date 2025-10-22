@@ -64,11 +64,16 @@ public class SecurityConfig {
                                "/providers/available-verified", "/providers/top-rated",
                                "/providers/available", "/providers/search", "/providers/search/qualification")
                 .permitAll()
+                // Payment gateway callbacks must be public (no authentication)
+                .requestMatchers("/payments/paytm/callback", "/payments/razorpay/callback", 
+                               "/payments/stripe/webhook").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/users/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/service-categories/**").hasAnyRole("ADMIN", "PROVIDER")
                 .requestMatchers("/services/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/service-requests/**").hasAnyRole("ADMIN", "PROVIDER")
+                .requestMatchers("/providers/available-verified", "/providers/top-rated", 
+                               "/providers/available", "/providers/search", "/providers/search/qualification").permitAll()
                 .requestMatchers("/providers/**").hasAnyRole("ADMIN", "PROVIDER")
                 .requestMatchers("/bookings/**").hasAnyRole("ADMIN", "USER", "PROVIDER", "CUSTOMER")
                 .requestMatchers("/booking-rejections/**").hasAnyRole("ADMIN", "PROVIDER")

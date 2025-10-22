@@ -9,11 +9,12 @@ export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
+    <footer className="relative bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 text-white overflow-hidden animate-fade-in">
       {/* Decorative Elements */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-overlay filter blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-overlay filter blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-overlay filter blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-slate-500 rounded-full mix-blend-overlay filter blur-3xl animate-float-reverse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-blue-400 rounded-full mix-blend-overlay filter blur-2xl animate-float-slow"></div>
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -21,7 +22,7 @@ export const Footer = () => {
           {/* Company Info */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-xl">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-slate-800 rounded-xl flex items-center justify-center shadow-xl hover:scale-110 transition-transform duration-300">
                 <HeartIcon className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-2xl font-black">
@@ -60,13 +61,21 @@ export const Footer = () => {
                 { name: 'Services', href: '/services' },
                 { name: 'About Us', href: '/about' },
                 { name: 'Contact', href: '/contact' },
+                { name: 'For Providers', href: 'http://localhost:5176', external: true },
               ].map((link) => (
                 <li key={link.name}>
                   <a 
                     href={link.href} 
-                    className="text-gray-300 hover:text-white hover:translate-x-2 inline-block transition-all duration-300"
+                    target={link.external ? "_blank" : undefined}
+                    rel={link.external ? "noopener noreferrer" : undefined}
+                    className="text-gray-300 hover:text-white hover:translate-x-2 inline-block transition-all duration-300 flex items-center space-x-1"
                   >
-                    → {link.name}
+                    <span>→ {link.name}</span>
+                    {link.external && (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    )}
                   </a>
                 </li>
               ))}

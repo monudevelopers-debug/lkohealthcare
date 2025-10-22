@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/auth/AuthContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import apiClient from '../../lib/api/client';
+import { Notification, useNotification } from '../ui/Notification';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
   const [isLoading, setIsLoading] = useState(false);
   const { register, login } = useAuth();
   const navigate = useNavigate();
+  const { notification, showSuccess, showError, hideNotification } = useNotification();
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,14 +47,32 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     setIsLoading(true);
 
     try {
-      await apiClient.post('/auth/send-otp', {
+      const response = await apiClient.post('/auth/send-otp', {
         phone: formData.phone
       });
       
+      console.log('✅ OTP sent successfully:', response.data);
+      
+      // Show professional success notification
+      showSuccess(
+        'OTP Sent Successfully',
+        `A 6-digit OTP has been sent to ${formData.phone}. Please check your phone and enter the code below.`
+      );
+      
       setStep('otp');
     } catch (err: any) {
-      console.error('OTP Send Error:', err);
-      setError(err.response?.data?.error || 'Failed to send OTP. Please try again.');
+      console.error('❌ OTP Send Error:', err);
+      const errorMessage = err.response?.data?.error || 'Failed to send OTP';
+      
+      // Show professional error notification
+      showError(
+        'OTP Send Failed',
+        errorMessage.includes('Failed to send OTP') 
+          ? 'Unable to send OTP. Please try again or contact support if the issue persists.'
+          : errorMessage
+      );
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -81,16 +101,26 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
         // Auto-login after successful registration
         await login(formData.email, formData.password);
         
+        // Show success notification
+        showSuccess(
+          'Registration Successful',
+          'Your account has been created successfully. Welcome to Lucknow Healthcare!'
+        );
+        
         handleClose();
         
         // Redirect to dashboard
         navigate('/dashboard');
       } else {
-        setError(verifyResponse.data.error || 'OTP verification failed');
+        const errorMsg = verifyResponse.data.error || 'OTP verification failed';
+        showError('OTP Verification Failed', errorMsg);
+        setError(errorMsg);
       }
     } catch (err: any) {
       console.error('Verification Error:', err);
-      setError(err.response?.data?.error || 'OTP verification failed. Please try again.');
+      const errorMsg = err.response?.data?.error || 'OTP verification failed. Please try again.';
+      showError('Verification Error', errorMsg);
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -115,16 +145,25 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
       
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 animate-scale-in">
+      <div className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
+        <Dialog.Panel className="mx-auto max-w-md w-full bg-white rounded-3xl shadow-2xl p-6 animate-scale-in border border-blue-100 max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <Dialog.Title className="text-3xl font-black text-gray-900">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-slate-800 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">L</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Lucknow Healthcare</h3>
+                  <p className="text-xs text-gray-500">Professional Care at Home</p>
+                </div>
+              </div>
+              <Dialog.Title className="text-2xl font-bold text-gray-900">
                 {step === 'form' ? 'Create Account ✨' : 'Verify Your Phone 📱'}
               </Dialog.Title>
-              <p className="text-gray-500 mt-1">
-                {step === 'form' ? 'Join thousands of happy patients' : 'Enter the OTP we sent to your phone'}
+              <p className="text-gray-600 mt-1">
+                {step === 'form' ? 'Join our healthcare community' : 'Enter the OTP we sent to your phone'}
               </p>
             </div>
             <button 
@@ -147,7 +186,7 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
           )}
 
           {step === 'form' ? (
-            <form onSubmit={handleSendOTP} className="space-y-5">
+            <form onSubmit={handleSendOTP} className="space-y-4">
               <Input
                 type="text"
                 label="Full Name"
@@ -205,7 +244,7 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                 fullWidth
                 size="lg"
                 isLoading={isLoading}
-                variant="gradient"
+                className="bg-gradient-to-r from-blue-600 to-slate-700 hover:from-blue-700 hover:to-slate-800 text-white font-semibold hover:scale-105 transform transition-all duration-300"
               >
                 {isLoading ? 'Sending OTP...' : '✨ Send OTP'}
               </Button>
@@ -215,8 +254,8 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
               </p>
             </form>
           ) : (
-            <form onSubmit={handleVerifyOTP} className="space-y-6">
-              <div className="text-center mb-6">
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div className="text-center mb-4">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center animate-pulse-slow shadow-xl">
                   <ShieldCheckIcon className="w-10 h-10 text-white" />
                 </div>
@@ -242,7 +281,7 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                 fullWidth
                 size="lg"
                 isLoading={isLoading}
-                variant="gradient"
+                className="bg-gradient-to-r from-blue-600 to-slate-700 hover:from-blue-700 hover:to-slate-800 text-white font-semibold hover:scale-105 transform transition-all duration-300"
               >
                 {isLoading ? 'Verifying...' : '✓ Verify & Create Account'}
               </Button>
@@ -269,12 +308,12 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
           )}
 
           {step === 'form' && (
-            <div className="mt-8 text-center">
+            <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Already have an account?{' '}
                 <button
                   onClick={onSwitchToLogin}
-                  className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all"
+                  className="font-bold bg-gradient-to-r from-blue-600 to-slate-700 bg-clip-text text-transparent hover:from-blue-700 hover:to-slate-800 transition-all"
                 >
                   Sign In →
                 </button>
@@ -283,6 +322,15 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
           )}
         </Dialog.Panel>
       </div>
+      
+      {/* Professional Notification */}
+      <Notification
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={hideNotification}
+      />
     </Dialog>
   );
 };

@@ -2,19 +2,26 @@ package com.lucknow.healthcare.controller;
 
 import com.lucknow.healthcare.payment.PaymentGateway;
 import com.lucknow.healthcare.payment.PaytmPaymentGateway;
+import com.lucknow.healthcare.repository.PaymentRepository;
 import com.lucknow.healthcare.util.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * REST Controller for Payment operations
@@ -33,6 +40,9 @@ public class PaymentController {
     
     @Autowired
     private PaymentGateway paymentGateway;
+    
+    @Autowired
+    private PaymentRepository paymentRepository;
     
     @Value("${payment.gateway.mode:DUMMY}")
     private String gatewayMode;
@@ -203,6 +213,68 @@ public class PaymentController {
             logger.error("Error fetching payment status", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching status: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get payment history for current customer
+     */
+    @GetMapping("/history")
+    public ResponseEntity<?> getPaymentHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            UUID customerId = SecurityUtils.getCurrentUserId();
+            logger.info("Fetching payment history for customer: {}", customerId);
+            
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            
+            // Get payments for this customer using repository method
+            Page<com.lucknow.healthcare.entity.Payment> payments = paymentRepository.findAll(pageable);
+            
+            // Filter by customer
+            List<com.lucknow.healthcare.entity.Payment> customerPayments = 
+                payments.getContent().stream()
+                    .filter(p -> p.getCustomer() != null && p.getCustomer().getId().equals(customerId))
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(Map.of("content", customerPayments));
+            
+        } catch (Exception e) {
+            logger.error("Error fetching payment history", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching payment history: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Download invoice for a payment
+     */
+    @GetMapping("/{paymentId}/invoice")
+    public ResponseEntity<?> downloadInvoice(@PathVariable UUID paymentId) {
+        try {
+            UUID customerId = SecurityUtils.getCurrentUserId();
+            
+            com.lucknow.healthcare.entity.Payment payment = paymentRepository.findById(paymentId)
+                    .orElseThrow(() -> new RuntimeException("Payment not found"));
+            
+            // Security check
+            if (!payment.getCustomer().getId().equals(customerId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Access denied");
+            }
+            
+            // For now, return invoice URL or generate PDF
+            if (payment.getInvoiceUrl() != null) {
+                return ResponseEntity.ok(Map.of("invoiceUrl", payment.getInvoiceUrl()));
+            } else {
+                return ResponseEntity.ok(Map.of("message", "Invoice not available yet"));
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error downloading invoice", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error downloading invoice: " + e.getMessage());
         }
     }
     

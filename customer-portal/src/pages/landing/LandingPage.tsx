@@ -19,21 +19,21 @@ export const LandingPage = () => {
       description: 'Professional nursing care in the comfort of your home with certified nurses',
       price: 'Starting from ₹500/day',
       icon: HeartIcon,
-      color: 'from-pink-500 to-rose-500',
+      color: 'from-blue-600 to-blue-700',
     },
     {
       name: 'Physiotherapy',
       description: 'Expert physiotherapy sessions for recovery, wellness, and pain management',
       price: 'Starting from ₹800/session',
       icon: SparklesIcon,
-      color: 'from-blue-500 to-cyan-500',
+      color: 'from-emerald-600 to-emerald-700',
     },
     {
       name: 'Elder Care',
       description: 'Compassionate and dedicated care for your elderly family members',
       price: 'Starting from ₹600/day',
       icon: UserGroupIcon,
-      color: 'from-purple-500 to-indigo-500',
+      color: 'from-teal-600 to-teal-700',
     },
   ];
 
@@ -42,25 +42,25 @@ export const LandingPage = () => {
       icon: ShieldCheckIcon,
       title: 'Certified Professionals',
       description: 'All our healthcare providers are verified, certified, and experienced',
-      color: 'from-green-500 to-emerald-500',
+      color: 'from-emerald-600 to-emerald-700',
     },
     {
       icon: ClockIcon,
       title: '24/7 Availability',
       description: 'Round-the-clock support and emergency services whenever you need',
-      color: 'from-blue-500 to-indigo-500',
+      color: 'from-blue-600 to-blue-700',
     },
     {
       icon: HeartIcon,
       title: 'Compassionate Care',
       description: 'We treat every patient with empathy, respect, and dignity',
-      color: 'from-pink-500 to-rose-500',
+      color: 'from-slate-600 to-slate-700',
     },
     {
       icon: CheckCircleIcon,
       title: 'Quality Assured',
       description: 'Highest standards of healthcare delivery at competitive prices',
-      color: 'from-purple-500 to-violet-500',
+      color: 'from-indigo-600 to-indigo-700',
     },
   ];
 
@@ -97,37 +97,38 @@ export const LandingPage = () => {
       />
       <div className="min-h-screen">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white py-20 md:py-32">
+        <section className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 text-white py-20 md:py-32 animate-fade-in">
           {/* Animated Background */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full mix-blend-overlay filter blur-3xl animate-float"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full mix-blend-overlay filter blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-overlay filter blur-3xl animate-float"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-slate-500 rounded-full mix-blend-overlay filter blur-3xl animate-float-reverse" style={{ animationDelay: '1s' }}></div>
+            <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-blue-400 rounded-full mix-blend-overlay filter blur-2xl animate-float-slow"></div>
           </div>
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center animate-fade-in">
-              <div className="inline-block mb-4">
-                <span className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-semibold border border-white/30">
+              <div className="inline-block mb-4 animate-bounce-in">
+                <span className="px-4 py-2 bg-blue-600/20 backdrop-blur-sm rounded-full text-sm font-semibold border border-blue-300/30">
                   ✨ Professional Healthcare at Your Doorstep
                 </span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
+              <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight animate-slide-up">
                 Quality Healthcare
                 <br />
-                <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-white bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-blue-300 via-slate-300 to-white bg-clip-text text-transparent animate-pulse">
                   Delivered to You
                 </span>
               </h1>
-              <p className="text-xl md:text-2xl mb-10 text-blue-100 max-w-3xl mx-auto font-light">
+              <p className="text-xl md:text-2xl mb-10 text-slate-200 max-w-3xl mx-auto font-light animate-fade-in-delay">
                 Book certified nurses, physiotherapists, and caregivers in Lucknow. 
                 Experience professional healthcare services at home.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button size="xl" variant="secondary" onClick={() => window.location.href = '/services'}>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-bounce-in">
+                <Button size="xl" variant="secondary" onClick={() => window.location.href = '/services'} className="hover:scale-105 transition-transform duration-300">
                   <SparklesIcon className="w-5 h-5" />
                   Explore Services
                 </Button>
-                <Button size="xl" variant="outline" className="bg-white/10 backdrop-blur-sm border-white text-white hover:bg-white hover:text-blue-600">
+                <Button size="xl" variant="outline" className="bg-blue-600/20 backdrop-blur-sm border-2 border-blue-300 text-white hover:bg-blue-500 hover:text-white hover:scale-105 transition-all duration-300">
                   <PhoneIcon className="w-5 h-5" />
                   Call +91-8400001034
                 </Button>
@@ -177,7 +178,7 @@ export const LandingPage = () => {
                 <Card 
                   key={index} 
                   hover 
-                  className="text-center overflow-hidden group animate-scale-in"
+                  className="text-center overflow-hidden group animate-fade-in-up hover:scale-105 transition-all duration-500"
                   style={{ animationDelay: `${index * 150}ms` }}
                 >
                   <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
@@ -189,7 +190,7 @@ export const LandingPage = () => {
                   <p className="text-gray-600 mb-6 leading-relaxed">
                     {service.description}
                   </p>
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-3 rounded-xl mb-6">
+                  <div className="bg-gradient-to-r from-blue-50 to-slate-50 px-4 py-3 rounded-xl mb-6">
                     <p className="text-blue-700 font-bold text-lg">
                       {service.price}
                     </p>
@@ -207,10 +208,10 @@ export const LandingPage = () => {
         <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <span className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full text-sm font-semibold mb-4 inline-block">
+              <span className="px-4 py-2 bg-gradient-to-r from-blue-600 to-slate-600 text-white rounded-full text-sm font-semibold mb-4 inline-block animate-bounce-in">
                 Why Choose Us
               </span>
-              <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">
+              <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 animate-slide-up">
                 Excellence in Every Service
               </h2>
             </div>
@@ -219,7 +220,7 @@ export const LandingPage = () => {
               {features.map((feature, index) => (
                 <div 
                   key={index} 
-                  className="text-center group animate-fade-in"
+                  className="text-center group animate-fade-in-up hover:scale-105 transition-all duration-500"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-lg`}>
@@ -332,6 +333,37 @@ export const LandingPage = () => {
                   <p className="text-sm font-semibold">{badge.text}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Provider Portal Section */}
+        <section className="py-16 bg-gradient-to-r from-blue-50 to-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Are You a Healthcare Provider?
+              </h2>
+              <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                Join our network of healthcare professionals and start serving patients in Lucknow. 
+                Flexible scheduling, competitive rates, and professional growth opportunities await.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a
+                  href="http://localhost:5176"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <span>Join as Provider</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+                <div className="text-sm text-gray-500 flex items-center justify-center">
+                  <span>See what providers experience</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>

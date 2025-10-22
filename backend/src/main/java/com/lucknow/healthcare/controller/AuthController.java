@@ -1,8 +1,11 @@
 package com.lucknow.healthcare.controller;
 
 import com.lucknow.healthcare.entity.User;
+import com.lucknow.healthcare.entity.Provider;
+import com.lucknow.healthcare.dto.ProviderRegistrationRequest;
 import com.lucknow.healthcare.security.JwtUtil;
 import com.lucknow.healthcare.service.interfaces.UserService;
+import com.lucknow.healthcare.service.interfaces.ProviderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +44,9 @@ public class AuthController {
     
     @Autowired
     private com.lucknow.healthcare.service.TwilioService twilioService;
+    
+    @Autowired
+    private ProviderService providerService;
     
     /**
      * Login endpoint
@@ -320,6 +327,70 @@ public class AuthController {
                 "verified", false,
                 "error", "Verification failed: " + e.getMessage()
             ));
+        }
+    }
+    
+    /**
+     * Register provider endpoint
+     * 
+     * @param request the provider registration request
+     * @return ResponseEntity containing JWT token, user, and provider information
+     */
+    @PostMapping("/register-provider")
+    public ResponseEntity<Map<String, Object>> registerProvider(@Valid @RequestBody ProviderRegistrationRequest request) {
+        try {
+            // Create User entity
+            User user = new User();
+            user.setName(request.getName());
+            user.setEmail(request.getEmail());
+            user.setPassword(request.getPassword());
+            user.setPhone(request.getPhone());
+            user.setRole(com.lucknow.healthcare.enums.UserRole.PROVIDER);
+            user.setStatus(com.lucknow.healthcare.enums.UserStatus.ACTIVE);
+            user.setEmailVerified(false);
+            
+            // Create Provider entity
+            Provider provider = new Provider();
+            provider.setName(request.getName());
+            provider.setEmail(request.getEmail());
+            provider.setPhone(request.getPhone());
+            provider.setQualification(request.getQualification());
+            provider.setExperience(request.getExperience());
+            provider.setDocuments(request.getDocuments());
+            provider.setIsVerified(false);
+            
+            // Register user and create provider profile
+            User registeredUser = userService.registerUser(user);
+            Provider createdProvider = providerService.createProviderWithUser(registeredUser, provider);
+            
+            // Generate JWT token
+            org.springframework.security.core.userdetails.UserDetails userDetails = 
+                org.springframework.security.core.userdetails.User
+                    .withUsername(registeredUser.getEmail())
+                    .password(registeredUser.getPassword())
+                    .authorities("ROLE_" + registeredUser.getRole().name())
+                    .build();
+            
+            String token = jwtUtil.generateToken(userDetails);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("user", registeredUser);
+            response.put("provider", createdProvider);
+            response.put("expiresIn", jwtUtil.getExpiration());
+            response.put("message", "Provider registration successful");
+            
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            response.put("message", "Provider registration failed");
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", "Registration failed");
+            response.put("message", "An unexpected error occurred: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
     

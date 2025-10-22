@@ -6,8 +6,10 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  address?: string;
   role: 'CUSTOMER' | 'PROVIDER' | 'ADMIN';
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,13 +40,99 @@ export interface Provider {
   name: string;
   email: string;
   phone: string;
-  qualifications: string;
+  qualification: string;
   experience: number;
+  availabilityStatus: 'AVAILABLE' | 'OFF_DUTY' | 'BUSY';
   rating: number;
-  isAvailable: boolean;
-  services: Service[];
+  totalRatings: number;
+  isVerified: boolean;
+  documents?: string[];
+  services?: Service[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Patient {
+  id: string;
+  customerId: string;
+  name: string;
+  age: number;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  weight?: number;
+  height?: number;
+  bloodGroup?: string;
+  isDiabetic?: boolean;
+  bpStatus: 'NORMAL' | 'HIGH' | 'LOW' | 'UNKNOWN';
+  allergies?: string;
+  chronicConditions?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
+  relationshipToCustomer: 'SELF' | 'PARENT' | 'CHILD' | 'SPOUSE' | 'SIBLING' | 'GRANDPARENT' | 'GRANDCHILD' | 'OTHER';
+  isSensitiveData?: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PrivacyAwareUser {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string; // May be null if outside privacy window
+  address?: string; // May be null if outside privacy window
+  role: 'CUSTOMER' | 'PROVIDER' | 'ADMIN';
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  contactDetailsAvailable: boolean;
+  privacyMessage: string;
+}
+
+export interface PrivacyAwarePatient {
+  id: string;
+  customerId: string;
+  name: string;
+  age: number;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  weight?: number;
+  height?: number;
+  bloodGroup?: string;
+  isDiabetic?: boolean;
+  bpStatus: 'NORMAL' | 'HIGH' | 'LOW' | 'UNKNOWN';
+  allergies?: string;
+  chronicConditions?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string; // May be null if outside privacy window
+  emergencyContactRelation?: string;
+  relationshipToCustomer: 'SELF' | 'SPOUSE' | 'CHILD' | 'PARENT' | 'SIBLING' | 'OTHER';
+  isSensitiveData: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  emergencyContactAvailable: boolean;
+  privacyMessage: string;
+}
+
+export interface PrivacyAwareBooking {
+  id: string;
+  user: PrivacyAwareUser;
+  service: Service;
+  provider?: Provider;
+  patient?: PrivacyAwarePatient;
+  scheduledDate: string;
+  scheduledTime: string;
+  duration: number;
+  status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  totalAmount: number;
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  specialInstructions?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  customerContactAvailable: boolean;
+  privacyMessage: string;
 }
 
 export interface Booking {
@@ -52,10 +140,14 @@ export interface Booking {
   user: User;
   service: Service;
   provider?: Provider;
+  patient?: Patient;
   scheduledDate: string;
   scheduledTime: string;
+  duration: number;
   status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   totalAmount: number;
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  specialInstructions?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -104,6 +196,24 @@ export interface LoginResponse {
   expiresIn: number;
 }
 
+export interface ProviderRegistrationRequest {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  qualification: string;
+  experience: number;
+  documents?: string[];
+}
+
+export interface ProviderRegistrationResponse {
+  token: string;
+  user: User;
+  provider: Provider;
+  expiresIn: number;
+  message: string;
+}
+
 // API Client
 class ApiClient {
   private client: AxiosInstance;
@@ -136,16 +246,11 @@ class ApiClient {
         if (error.response?.status === 401) {
           const requestUrl = error.config?.url || '';
           
-          // Skip auto-logout for login endpoint (to avoid redirect loops)
-          if (!requestUrl.includes('/auth/login')) {
-            console.warn('[API] Token expired or invalid - logging out');
+          // Handle 401 for all authenticated endpoints (except login/register)
+          if (!requestUrl.includes('/auth/login') && !requestUrl.includes('/auth/register')) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            
-            // Only redirect if not already on login page
-            if (window.location.pathname !== '/login') {
-              window.location.href = '/login';
-            }
+            window.dispatchEvent(new CustomEvent('auth:logout'));
           }
         }
         return Promise.reject(error);
@@ -167,6 +272,16 @@ class ApiClient {
 
   async getCurrentUser(): Promise<User> {
     const response: AxiosResponse<User> = await this.client.get('/auth/me');
+    return response.data;
+  }
+
+  async refreshToken(): Promise<{ token: string }> {
+    const response: AxiosResponse<{ token: string }> = await this.client.post('/auth/refresh-token');
+    return response.data;
+  }
+
+  async registerProvider(registrationData: ProviderRegistrationRequest): Promise<ProviderRegistrationResponse> {
+    const response: AxiosResponse<ProviderRegistrationResponse> = await this.client.post('/auth/register-provider', registrationData);
     return response.data;
   }
 
@@ -234,7 +349,17 @@ class ApiClient {
   }
 
   async getRecentBookings(limit = 10): Promise<Booking[]> {
-    const response: AxiosResponse<Booking[]> = await this.client.get(`/providers/recent-bookings?limit=${limit}`);
+    const response: AxiosResponse<Booking[]> = await this.client.get(`/providers/bookings?page=0&size=${limit}`);
+    return response.data.content || [];
+  }
+
+  // Calendar API - fetch provider bookings by date range
+  async getProviderBookings(startDate: string, endDate: string): Promise<Booking[]> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    });
+    const response: AxiosResponse<Booking[]> = await this.client.get(`/providers/bookings/calendar?${params}`);
     return response.data;
   }
 
@@ -294,10 +419,13 @@ class ApiClient {
 // Create and export API client instance
 const apiClient = new ApiClient();
 
+
 // Export individual functions as arrow functions to maintain 'this' context
 export const login = (credentials: LoginRequest) => apiClient.login(credentials);
 export const logout = () => apiClient.logout();
 export const getCurrentUser = () => apiClient.getCurrentUser();
+export const refreshToken = () => apiClient.refreshToken();
+export const registerProvider = (registrationData: ProviderRegistrationRequest) => apiClient.registerProvider(registrationData);
 export const getProviderProfile = () => apiClient.getProviderProfile();
 export const getCurrentProvider = () => apiClient.getProviderProfile(); // Alias for clarity
 export const updateProviderProfile = (profile: Partial<Provider>) => apiClient.updateProviderProfile(profile);
@@ -311,6 +439,7 @@ export const startService = (id: string) => apiClient.startService(id);
 export const completeService = (id: string, notes?: string) => apiClient.completeService(id, notes);
 export const getProviderStats = (period: 'today' | 'week' | 'month') => apiClient.getProviderStats(period);
 export const getRecentBookings = (limit = 10) => apiClient.getRecentBookings(limit);
+export const getProviderBookings = (startDate: string, endDate: string) => apiClient.getProviderBookings(startDate, endDate);
 export const getEarnings = (period: 'today' | 'week' | 'month' | 'year') => apiClient.getEarnings(period);
 export const getPaymentHistory = (page = 0, size = 20) => apiClient.getPaymentHistory(page, size);
 export const getMyReviews = (page = 0, size = 20) => apiClient.getMyReviews(page, size);

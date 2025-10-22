@@ -313,6 +313,77 @@ const BookingHistory: React.FC = () => {
                 </div>
               </div>
 
+              {/* Patient Information */}
+              {selectedBooking.patient && (
+                <div className="bg-pink-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <User className="w-5 h-5 mr-2" />
+                    Patient Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Patient Name</label>
+                      <p className="text-sm text-gray-900 font-semibold bg-white px-3 py-2 rounded border">{selectedBooking.patient.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Age / Gender</label>
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.age} years / {selectedBooking.patient.gender}</p>
+                    </div>
+                    {selectedBooking.patient.bloodGroup && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Blood Group</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.bloodGroup}</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Relationship</label>
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.relationshipToCustomer}</p>
+                    </div>
+                    {selectedBooking.patient.isDiabetic && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Medical Condition</label>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          Diabetic
+                        </span>
+                      </div>
+                    )}
+                    {selectedBooking.patient.bpStatus !== 'NORMAL' && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">BP Status</label>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          {selectedBooking.patient.bpStatus} BP
+                        </span>
+                      </div>
+                    )}
+                    {selectedBooking.patient.allergies && (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Allergies</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.allergies}</p>
+                      </div>
+                    )}
+                    {selectedBooking.patient.chronicConditions && (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Chronic Conditions</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.chronicConditions}</p>
+                      </div>
+                    )}
+                    {selectedBooking.patient.emergencyContactName && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Emergency Contact</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.emergencyContactName}</p>
+                      </div>
+                    )}
+                    {selectedBooking.patient.emergencyContactRelation && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Emergency Relation</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.emergencyContactRelation}</p>
+                      </div>
+                    )}
+                    {/* Note: Emergency phone number is hidden for provider dashboard as per requirement */}
+                  </div>
+                </div>
+              )}
+
               {/* Privacy Notice */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">

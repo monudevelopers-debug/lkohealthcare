@@ -86,8 +86,8 @@ public class Payment {
     @Column(name = "failure_reason", columnDefinition = "TEXT")
     private String failureReason;
     
-    @Column(name = "gateway_response", columnDefinition = "TEXT")
-    private String gatewayResponse; // Store full JSON response for debugging
+    @Column(name = "gateway_response", columnDefinition = "JSONB")
+    private String gatewayResponse; // Store full JSON response for debugging (JSONB for better querying)
     
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -52,14 +52,23 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
       
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 animate-scale-in">
+        <Dialog.Panel className="mx-auto max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 animate-scale-in border border-blue-100">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <Dialog.Title className="text-3xl font-black text-gray-900">
-                Welcome Back! 👋
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-slate-800 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">L</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Lucknow Healthcare</h3>
+                  <p className="text-xs text-gray-500">Professional Care at Home</p>
+                </div>
+              </div>
+              <Dialog.Title className="text-2xl font-bold text-gray-900">
+                Welcome Back!
               </Dialog.Title>
-              <p className="text-gray-500 mt-1">Sign in to access your account</p>
+              <p className="text-gray-600 mt-1">Access your healthcare services</p>
             </div>
             <button 
               onClick={handleClose} 
@@ -101,8 +110,9 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
               fullWidth
               size="lg"
               isLoading={isLoading}
+              className="bg-gradient-to-r from-blue-600 to-slate-700 hover:from-blue-700 hover:to-slate-800 text-white font-semibold hover:scale-105 transform transition-all duration-300"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Signing in...' : 'Access Healthcare Services'}
             </Button>
           </form>
 
@@ -111,7 +121,7 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
               Don't have an account?{' '}
               <button
                 onClick={onSwitchToRegister}
-                className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all"
+                className="font-bold bg-gradient-to-r from-blue-600 to-slate-700 bg-clip-text text-transparent hover:from-blue-700 hover:to-slate-800 transition-all"
               >
                 Create Account →
               </button>

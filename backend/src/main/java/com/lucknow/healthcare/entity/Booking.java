@@ -57,6 +57,13 @@ public class Booking {
     @JoinColumn(name = "provider_id")
     private Provider provider;
     
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+    
+    @OneToOne(mappedBy = "booking", fetch = FetchType.EAGER)
+    private Review review;
+    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BookingStatus status = BookingStatus.PENDING;
@@ -164,6 +171,22 @@ public class Booking {
     
     public void setProvider(Provider provider) {
         this.provider = provider;
+    }
+    
+    public Patient getPatient() {
+        return patient;
+    }
+    
+    public void setPatient(Patient patient) {
+        this.patient = patient;
+    }
+    
+    public Review getReview() {
+        return review;
+    }
+    
+    public void setReview(Review review) {
+        this.review = review;
     }
     
     public BookingStatus getStatus() {

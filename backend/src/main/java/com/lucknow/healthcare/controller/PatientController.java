@@ -34,7 +34,7 @@ public class PatientController {
      * Create a new patient
      */
     @PostMapping
-    public ResponseEntity<?> createPatient(@Valid @RequestBody Patient patient) {
+    public ResponseEntity<?> createPatient(@RequestBody Patient patient) {
         try {
             UUID customerId = SecurityUtils.getCurrentUserId();
             Patient createdPatient = patientService.createPatient(patient, customerId);

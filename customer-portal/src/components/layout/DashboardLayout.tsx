@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth/AuthContext';
+import { usePatient } from '../../lib/context/PatientContext';
 import {
   Squares2X2Icon,
   UsersIcon,
@@ -23,6 +24,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { selectedPatient, clearSelectedPatient } = usePatient();
 
   const handleLogout = async () => {
     await logout();
@@ -158,6 +160,30 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="w-6" /> {/* Spacer for centering */}
         </div>
+
+        {/* Selected Patient Banner */}
+        {selectedPatient && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-4 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <UsersIcon className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-blue-600 font-medium uppercase tracking-wide">Booking For</p>
+                  <p className="text-sm font-semibold text-gray-900">{selectedPatient.name} ({selectedPatient.age}y, {selectedPatient.gender})</p>
+                </div>
+              </div>
+              <button
+                onClick={() => clearSelectedPatient()}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <XMarkIcon className="w-4 h-4" />
+                Change Patient
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="p-4 lg:p-8 min-h-[calc(100vh-4rem)]">{children}</main>

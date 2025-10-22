@@ -55,11 +55,31 @@ export interface Provider {
   updatedAt: string;
 }
 
+export interface Patient {
+  id: string;
+  customerId: string;
+  name: string;
+  age: number;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  weight?: number;
+  height?: number;
+  bloodGroup?: string;
+  isDiabetic: boolean;
+  bpStatus: 'NORMAL' | 'HIGH' | 'LOW' | 'UNKNOWN';
+  allergies?: string;
+  chronicConditions?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  relationshipToCustomer: string;
+  isSensitiveData: boolean;
+}
+
 export interface Booking {
   id: string;
   user: User;
   service: Service;
   provider?: Provider;
+  patient?: Patient;
   scheduledDate: string;
   scheduledTime: string;
   duration: number;

@@ -33,6 +33,7 @@ const Profile: React.FC = () => {
     getProviderProfile,
   );
 
+
   // Update profile mutation
   const updateProfileMutation = useMutation(
     (profileData: any) => updateProviderProfile(profileData),
@@ -50,6 +51,10 @@ const Profile: React.FC = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries('provider-profile');
+      },
+      onError: (error: any) => {
+        console.error('Failed to update availability:', error);
+        // The error will be handled by the UI
       },
     }
   );
@@ -100,7 +105,8 @@ const Profile: React.FC = () => {
 
   const handleAvailabilityToggle = () => {
     if (profile) {
-      updateAvailabilityMutation.mutate(!profile.isAvailable);
+      const isCurrentlyAvailable = profile.availabilityStatus === 'AVAILABLE';
+      updateAvailabilityMutation.mutate(!isCurrentlyAvailable);
     }
   };
 
@@ -199,26 +205,46 @@ const Profile: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Availability Status</h3>
               </div>
+              
+              {/* Error Message */}
+              {updateAvailabilityMutation.isError && (
+                <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center">
+                    <AlertCircle className="w-4 h-4 text-red-600 mr-2" />
+                    <div className="text-sm text-red-800">
+                      <p className="font-medium">Cannot change availability status</p>
+                      <p className="text-xs mt-1">
+                        You have active bookings that need to be completed or cancelled first.
+                        <a href="/bookings" className="text-blue-600 hover:text-blue-800 underline ml-1">
+                          Manage bookings
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex items-center justify-between mt-2">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  profile?.isAvailable 
+                  profile?.availabilityStatus === 'AVAILABLE'
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {profile?.isAvailable ? 'Available' : 'Unavailable'}
+                  {profile?.availabilityStatus === 'AVAILABLE' ? 'Available' : 'Unavailable'}
                 </span>
                 <button
                   onClick={handleAvailabilityToggle}
                   disabled={updateAvailabilityMutation.isLoading}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                    profile?.isAvailable
+                    profile?.availabilityStatus === 'AVAILABLE'
                       ? 'bg-red-100 text-red-700 hover:bg-red-200 disabled:bg-red-50'
                       : 'bg-green-100 text-green-700 hover:bg-green-200 disabled:bg-green-50'
                   } disabled:cursor-not-allowed`}
+                  style={{ pointerEvents: 'auto' }}
                 >
                   {updateAvailabilityMutation.isLoading 
                     ? 'Updating...' 
-                    : (profile?.isAvailable ? 'Go Offline' : 'Go Online')}
+                    : (profile?.availabilityStatus === 'AVAILABLE' ? 'Go Offline' : 'Go Online')}
                 </button>
               </div>
             </div>

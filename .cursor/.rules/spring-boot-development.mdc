@@ -1,0 +1,56 @@
+---
+description: Spring Boot backend development guidelines
+globs: ["**/src/main/java/**/*.java", "**/src/test/java/**/*.java"]
+alwaysApply: false
+---
+
+# Spring Boot Development Rules
+
+## Code Structure
+- Controllers: Handle HTTP requests, delegate to services
+- Services: Business logic layer
+- Repositories: Data access layer (Spring Data JPA)
+- DTOs: Data transfer objects for API requests/responses
+- Entities: JPA entities for database mapping
+
+## Dependency Injection
+- Always use constructor injection (never @Autowired on fields)
+- Make dependencies final
+- Use @RequiredArgsConstructor from Lombok
+
+## Security
+- JWT authentication with Spring Security
+- Role-based authorization using @PreAuthorize
+- Never return raw entities in API responses (use DTOs)
+- Hash passwords with BCrypt
+- Validate all user inputs
+
+## REST API Design
+- Use standard HTTP methods (GET, POST, PUT, DELETE)
+- Return appropriate status codes (200, 201, 400, 401, 403, 404, 500)
+- Consistent JSON response structure
+- Proper exception handling with @ControllerAdvice
+
+## Database
+- Use Spring Data JPA for database operations
+- Write efficient queries (avoid N+1 problems)
+- Use transactions appropriately (@Transactional)
+- PostgreSQL as primary database, Redis for caching
+
+## Testing
+- Unit tests with JUnit 5 and Mockito
+- Integration tests with @SpringBootTest
+- MockMvc for controller tests
+- @DataJpaTest for repository tests
+- Never commit tests with hardcoded production credentials
+
+## Configuration
+- Use application.yml for configuration
+- Environment-specific profiles (dev, test, prod)
+- Externalize sensitive configuration (use environment variables)
+
+## Naming Conventions
+- Classes: PascalCase (UserController, BookingService)
+- Methods: camelCase (findUserById, createBooking)
+- Constants: ALL_CAPS (MAX_LOGIN_ATTEMPTS)
+- REST endpoints: kebab-case (/api/customer-bookings)

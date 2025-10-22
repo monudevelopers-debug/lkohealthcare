@@ -37,6 +37,7 @@ public class Patient {
     @NotNull(message = "Customer is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User customer;
     
     @NotBlank(message = "Patient name is required")
@@ -85,7 +86,7 @@ public class Patient {
     @Column(name = "emergency_contact_name")
     private String emergencyContactName;
     
-    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
+    @Pattern(regexp = "^$|^[0-9]{10}$", message = "Phone number must be 10 digits or empty")
     @Column(name = "emergency_contact_phone", length = 20)
     private String emergencyContactPhone;
     
@@ -176,6 +177,11 @@ public class Patient {
     
     public void setCustomer(User customer) {
         this.customer = customer;
+    }
+    
+    @com.fasterxml.jackson.annotation.JsonProperty("customerId")
+    public UUID getCustomerId() {
+        return customer != null ? customer.getId() : null;
     }
     
     public String getName() {

@@ -22,6 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0.0
  */
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "payment.gateway.mode",
+    havingValue = "DUMMY",
+    matchIfMissing = true
+)
 public class DummyPaymentGateway implements PaymentGateway {
     
     private static final Logger logger = LoggerFactory.getLogger(DummyPaymentGateway.class);

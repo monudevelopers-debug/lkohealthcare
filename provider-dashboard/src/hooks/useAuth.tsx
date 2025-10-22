@@ -1,14 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
-
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-}
+import api, { User } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +12,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -32,15 +24,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (token && storedUser && storedUser !== 'undefined') {
       try {
-        setUser(JSON.parse(storedUser));
+        // Check if token is expired
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Math.floor(Date.now() / 1000);
+        
+        if (tokenPayload.exp && tokenPayload.exp < currentTime) {
+          console.log('Token expired, clearing storage');
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setUser(null);
+        } else {
+          setUser(JSON.parse(storedUser));
+        }
       } catch (error) {
-        console.error('Error parsing stored user:', error);
+        console.error('Error parsing stored user or token:', error);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        setUser(null);
       }
+    } else {
+      setUser(null);
     }
     setIsLoading(false);
-  }, []);
+
+    // Listen for logout events from API interceptor
+    const handleLogout = () => {
+      setUser(null);
+      navigate('/login');
+    };
+
+    window.addEventListener('auth:logout', handleLogout);
+    
+    
+    return () => {
+      window.removeEventListener('auth:logout', handleLogout);
+    };
+  }, [navigate]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -75,11 +94,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}
 

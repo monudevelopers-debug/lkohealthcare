@@ -1,0 +1,66 @@
+---
+description: Playwright E2E testing best practices for React dashboards
+globs: ["**/tests/**/*.spec.ts", "**/tests/**/*.spec.js", "**/playwright.config.ts"]
+alwaysApply: false
+---
+
+# Playwright E2E Testing Rules
+
+## Test Philosophy
+- Test user-visible behavior, not implementation details
+- Focus on actual UI interactions as real users would perform them
+- Never depend on backend APIs being running for frontend tests
+- Tests must be independent and reproducible
+
+## Authentication Testing
+- Use existing test credentials (never create users programmatically)
+- Fill actual email and password input fields
+- Verify JWT token storage in localStorage
+- Test session persistence across page navigation
+- Detect unexpected logouts
+
+## Locator Strategy (Priority Order)
+1. `page.getByRole()` - Preferred for accessibility
+2. `page.getByLabel()` - For form inputs
+3. `page.getByText()` - For visible text
+4. `page.getByTestId()` - When data-testid exists
+5. Avoid XPath and complex CSS selectors
+
+## Test Structure
+- File naming: `feature.spec.ts` (e.g., `customer-login.spec.ts`)
+- Use `test.describe()` to group related tests
+- Use `test.beforeEach()` for common setup
+- Keep tests isolated (no shared state)
+
+## Best Practices
+- Use web-first assertions (`toBeVisible`, `toHaveText`)
+- Leverage Playwright's auto-waiting (avoid explicit waits)
+- Capture screenshots on failure
+- Log console errors and network failures
+- Test across Customer, Provider, and Admin dashboards sequentially
+
+## What NOT to Do
+- ❌ Don't create test users via API calls
+- ❌ Don't assume backend is running
+- ❌ Don't use fragile selectors (XPath, brittle CSS)
+- ❌ Don't hardcode URLs (use baseURL in config)
+- ❌ Don't write tests that depend on each other
+
+## Configuration
+- Set baseURL in playwright.config.ts for each dashboard
+- Use projects for different dashboards and browsers
+- Configure screenshots and videos for debugging
+- Run tests in parallel where possible
+
+## Error Handling
+- Always await async Playwright methods
+- Use try-catch for expected errors
+- Provide descriptive error messages
+- Use `expect.soft()` for non-critical assertions
+
+## Before Running Tests
+- Verify test credentials are available
+- Verify if backend is running on port (8080)
+- Confirm dashboard ports (5173, 5174, 5175)
+- Check that React apps are running
+- Never proceed if authentication fails

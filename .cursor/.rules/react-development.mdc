@@ -1,0 +1,45 @@
+---
+description: React development guidelines for Customer, Provider, and Admin dashboards
+globs: ["**/src/**/*.jsx", "**/src/**/*.tsx", "**/src/**/*.js"]
+alwaysApply: false
+---
+
+# React Development Rules
+
+## Component Structure
+- Use functional components with TypeScript/PropTypes
+- Custom hooks for complex state management (prefix with `use`)
+- Keep components small and focused on single responsibility
+
+## State Management
+- Use React Context for global state (auth, user data)
+- useState for local component state
+- Never mutate state directly
+
+## Authentication Flow
+- Check localStorage for JWT token on app mount
+- Redirect to /login if token is missing or expired
+- Clear token and redirect on 401 responses
+- Store user role and use for conditional rendering
+
+## API Calls
+- Use axios or fetch with proper error handling
+- Always include Authorization header with JWT
+- Handle network errors gracefully with user feedback
+- Never expose sensitive data in console logs
+
+## Routing
+- Use React Router v6 syntax
+- Protected routes should check authentication status
+- Role-based route guards for admin/provider-only pages
+
+## File Naming
+- Components: PascalCase.jsx (e.g., CustomerDashboard.jsx)
+- Hooks: useCamelCase.js (e.g., useAuth.js)
+- Utils: camelCase.js (e.g., apiClient.js)
+
+## Common Patterns
+- Loading states for async operations
+- Error boundaries for graceful error handling
+- Consistent form validation
+- Accessibility: proper ARIA labels and semantic HTML

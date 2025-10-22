@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useService } from '../../lib/hooks/useServices';
 import { useCreateBooking } from '../../lib/hooks/useBookings';
 import { useAuth } from '../../lib/auth/AuthContext';
+import { usePatient } from '../../lib/context/PatientContext';
 import { patientsApi } from '../../lib/api/patients.api';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { PaymentModal } from '../../components/payment/PaymentModal';
 import { formatCurrency } from '../../lib/utils/formatDate';
 import { validateLucknowAddress } from '../../lib/utils/addressValidation';
 import { 
@@ -23,17 +25,30 @@ export const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { selectedPatient } = usePatient();
   const { data: service, isLoading } = useService(id!);
   const createBooking = useCreateBooking();
 
   // Fetch patients
-  const { data: patients = [] } = useQuery({
+  const { data: patients = [], error: patientsError } = useQuery({
     queryKey: ['patients'],
     queryFn: () => patientsApi.getPatients(),
     enabled: isAuthenticated,
+    retry: 1,
+    onError: (err: any) => {
+      console.error('Failed to load patients:', err);
+      // Don't logout, just show error
+    },
   });
 
-  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [selectedPatientId, setSelectedPatientId] = useState<string>(selectedPatient?.id || '');
+  
+  // Auto-select patient if one is selected from context
+  useEffect(() => {
+    if (selectedPatient) {
+      setSelectedPatientId(selectedPatient.id);
+    }
+  }, [selectedPatient]);
   const [bookingData, setBookingData] = useState({
     scheduledDateTime: '',
     address: '',
@@ -41,6 +56,8 @@ export const ServiceDetailPage = () => {
   });
   const [error, setError] = useState('');
   const [addressError, setAddressError] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [createdBookingId, setCreatedBookingId] = useState<string>('');
 
   const handleAddressChange = (value: string) => {
     setBookingData({ ...bookingData, address: value });
@@ -92,7 +109,7 @@ export const ServiceDetailPage = () => {
       // Combine address and notes with patient info
       const specialInstructions = `Patient ID: ${selectedPatientId}\nAddress: ${bookingData.address}${bookingData.notes ? `\n\nNotes: ${bookingData.notes}` : ''}`;
       
-      await createBooking.mutateAsync({
+      const booking = await createBooking.mutateAsync({
         userId: user.id,
         serviceId: id!,
         patientId: selectedPatientId, // Include patient ID
@@ -103,7 +120,9 @@ export const ServiceDetailPage = () => {
         specialInstructions: specialInstructions,
       });
       
-      navigate('/bookings');
+      // Show payment modal after booking is created
+      setCreatedBookingId(booking.id);
+      setShowPaymentModal(true);
     } catch (err: any) {
       console.error('Booking error:', err);
       setError(err.response?.data?.message || 'Failed to create booking. Please try again.');
@@ -348,6 +367,22 @@ export const ServiceDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && createdBookingId && service && (
+        <PaymentModal
+          bookingId={createdBookingId}
+          amount={service.price}
+          onSuccess={() => {
+            setShowPaymentModal(false);
+            navigate('/bookings');
+          }}
+          onClose={() => {
+            setShowPaymentModal(false);
+            navigate('/bookings');
+          }}
+        />
+      )}
     </div>
   );
 };

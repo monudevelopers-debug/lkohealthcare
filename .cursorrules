@@ -1,0 +1,103 @@
+You are working on an existing healthcare service booking platform that is 80% complete.
+
+PROJECT: Lucknow Nursing Healthcare Services
+TECH STACK: Spring Boot (backend) + React (3 frontends) + PostgreSQL + Redis
+
+- Backend (Port 8080) - Backend
+EXISTING DASHBOARDS:
+- Customer Portal (Port 5175) - For booking services
+- Provider Dashboard (Port 5174) - For healthcare providers  
+- Admin Dashboard (Port 5173) - For system management
+
+YOUR PRIMARY RULES:
+
+1. NEVER DELETE OR REWRITE EXISTING WORKING CODE
+   - Always read and understand code before changing it
+   - Make minimal surgical changes to fix bugs
+   - Add new code alongside existing code, don't replace it
+
+2. WHEN FIXING BUGS:
+   - First, understand the exact problem and reproduce it
+   - Find the root cause (frontend, backend, or integration)
+   - Make the smallest possible fix
+   - Test immediately after fixing
+   - Don't refactor unrelated code while fixing bugs
+
+3. WHEN ADDING NEW FEATURES:
+   - Check what existing code will be affected
+   - Create new database tables/columns with Flyway migrations
+   - Add new API endpoints (don't modify existing ones)
+   - Build new UI components (don't modify existing ones)
+   - Test the new feature in isolation first
+   - Then integrate with existing code carefully
+   - Update all 3 dashboards if the feature affects them
+
+4. CROSS-DASHBOARD CHANGES:
+   When a change affects multiple dashboards:
+   - Update backend first (database, APIs)
+   - Update Customer Portal
+   - Update Provider Dashboard  
+   - Update Admin Dashboard
+   - Test data flow across all dashboards
+
+5. ALWAYS MAINTAIN BACKWARD COMPATIBILITY:
+   - New database columns must be nullable initially
+   - New API parameters must be optional
+   - Never change existing API response structures
+   - Add new endpoints for breaking changes (use /v2/ prefix)
+
+6. BEFORE MAKING ANY CHANGE:
+   - Identify which files will be affected
+   - Check if there are tests for this code
+   - Understand dependencies (what other code uses this)
+   - Ask yourself: "Will this break existing functionality?"
+
+7. AUTHENTICATION & SECURITY:
+   - JWT tokens stored in localStorage
+   - Always include Authorization header in API calls
+   - Handle 401 errors by redirecting to login
+   - Never log sensitive data (passwords, medical info, payment details)
+
+8. COMMON BUG PATTERNS TO CHECK:
+   - Token not persisting on page refresh
+   - State mutations (use spread operator)
+   - CORS errors (check SecurityConfig)
+   - N+1 database queries (use JOIN FETCH)
+   - Missing error handling in try-catch blocks
+
+9. TESTING REQUIREMENTS:
+   Before considering any change complete:
+   - Backend unit tests pass
+   - Frontend works in all 3 dashboards
+   - No console errors in browser
+   - No exceptions in backend logs
+   - Manual testing done
+
+10. PRIORITY ORDER:
+    - Fix Critical bugs first (login, payment, data loss)
+    - Fix High priority bugs (major features broken)
+    - Fix Medium bugs (minor issues)
+    - Only then add new features
+
+DATABASE SCHEMA (Existing):
+- users (authentication)
+- providers (healthcare professionals)
+- service_categories (service types)
+- services (individual services)
+- bookings (service bookings)
+- payments (transactions)
+- reviews (ratings)
+
+KEY BUSINESS LOGIC:
+- Booking flow: Customer books → Payment → Provider assigned → Service delivered → Review
+- Provider assignment: Check availability, skills, location, no conflicts
+- Payment: Customer pays upfront via Razorpay/Stripe/Paytm
+- Refund policy: Full refund if cancelled 24h+ before booking
+
+WHEN IN DOUBT:
+- Ask clarifying questions before making changes
+- Explain what you're about to do and why
+- Show me the code you plan to change
+- Wait for confirmation before proceeding with risky changes
+
+REMEMBER: This is existing working code. Your job is to fix bugs and enhance carefully, not rebuild from scratch.

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { useUserBookings, useCancelBooking } from '../../lib/hooks/useBookings';
+import { ReviewModal } from '../../components/reviews/ReviewModal';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { formatCurrency } from '../../lib/utils/formatDate';
@@ -8,7 +9,8 @@ import { Dialog } from '@headlessui/react';
 import { 
   CalendarIcon, 
   ClockIcon,
-  XMarkIcon 
+  XMarkIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
 
 export const BookingsPage = () => {
@@ -18,6 +20,8 @@ export const BookingsPage = () => {
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState<any>(null);
 
   const handleCancelClick = (bookingId: string) => {
     setSelectedBooking(bookingId);
@@ -125,6 +129,121 @@ export const BookingsPage = () => {
                       )}
                     </div>
 
+                    {/* Provider Info - Shows when assigned */}
+                    {booking.provider && (
+                      <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Assigned Provider
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-gray-600">Provider Name</p>
+                            <p className="font-medium text-gray-900">{booking.provider.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Qualifications</p>
+                            <p className="text-sm text-gray-900">{booking.provider.qualifications}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Experience</p>
+                            <p className="text-sm text-gray-900">{booking.provider.experience} years</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Rating</p>
+                            <p className="text-sm text-gray-900 flex items-center gap-1">
+                              <span className="text-yellow-500">★</span>
+                              {booking.provider.rating.toFixed(1)} / 5.0
+                            </p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <p className="text-xs text-gray-600">Contact</p>
+                            <p className="text-sm text-gray-900">{booking.provider.phone}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Patient Info */}
+                    {booking.patient && (
+                      <div className="bg-pink-50 rounded-lg p-4 mb-4">
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Patient Details
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Patient Name</label>
+                            <p className="text-sm text-gray-900 font-semibold bg-white px-3 py-2 rounded border">{booking.patient.name}</p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Age / Gender</label>
+                            <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{booking.patient.age} years / {booking.patient.gender}</p>
+                          </div>
+                          {booking.patient.bloodGroup && (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Blood Group</label>
+                              <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{booking.patient.bloodGroup}</p>
+                            </div>
+                          )}
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Relationship</label>
+                            <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{booking.patient.relationshipToCustomer}</p>
+                          </div>
+                          {booking.patient.isDiabetic && (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Medical Condition</label>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Diabetic
+                              </span>
+                            </div>
+                          )}
+                          {booking.patient.bpStatus !== 'NORMAL' && (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">BP Status</label>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                {booking.patient.bpStatus} BP
+                              </span>
+                            </div>
+                          )}
+                          {booking.patient.allergies && (
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Allergies</label>
+                              <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{booking.patient.allergies}</p>
+                            </div>
+                          )}
+                          {booking.patient.chronicConditions && (
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Chronic Conditions</label>
+                              <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{booking.patient.chronicConditions}</p>
+                            </div>
+                          )}
+                          {booking.patient.emergencyContactName && (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Emergency Contact</label>
+                              <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{booking.patient.emergencyContactName}</p>
+                            </div>
+                          )}
+                          {booking.patient.emergencyContactPhone && (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Emergency Phone</label>
+                              <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{booking.patient.emergencyContactPhone}</p>
+                            </div>
+                          )}
+                          {booking.patient.emergencyContactRelation && (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Emergency Relation</label>
+                              <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{booking.patient.emergencyContactRelation}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Payment Info */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                       <div>
@@ -143,8 +262,8 @@ export const BookingsPage = () => {
                   </div>
 
                   {/* Actions */}
-                  {booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? (
-                    <div className="mt-4 md:mt-0 md:ml-6">
+                  <div className="mt-4 md:mt-0 md:ml-6 flex flex-col gap-2">
+                    {booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? (
                       <Button
                         variant="outline"
                         size="sm"
@@ -154,8 +273,38 @@ export const BookingsPage = () => {
                       >
                         {cancelingId === booking.id ? 'Canceling...' : 'Cancel Booking'}
                       </Button>
-                    </div>
-                  ) : null}
+                    ) : null}
+                    
+                    {booking.status === 'COMPLETED' && !booking.review && (
+                      <button
+                        onClick={() => {
+                          setReviewBooking(booking);
+                          setShowReviewModal(true);
+                        }}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all shadow-sm hover:shadow-md font-medium text-sm"
+                      >
+                        <StarIcon className="w-4 h-4" />
+                        Leave Review
+                      </button>
+                    )}
+                    
+                    {booking.status === 'COMPLETED' && booking.review && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <StarIcon
+                                key={i}
+                                className={`w-4 h-4 ${i < booking.review!.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-semibold text-amber-900">Your Review</span>
+                        </div>
+                        <p className="text-sm text-gray-700">{booking.review.comment}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))}
@@ -213,6 +362,24 @@ export const BookingsPage = () => {
             </Dialog.Panel>
           </div>
         </Dialog>
+
+        {/* Review Modal */}
+        {showReviewModal && reviewBooking && (
+          <ReviewModal
+            bookingId={reviewBooking.id}
+            serviceName={reviewBooking.service.name}
+            providerName={reviewBooking.provider?.name || 'Provider'}
+            onSuccess={() => {
+              setShowReviewModal(false);
+              setReviewBooking(null);
+              // Refresh bookings to update review status if needed
+            }}
+            onClose={() => {
+              setShowReviewModal(false);
+              setReviewBooking(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );

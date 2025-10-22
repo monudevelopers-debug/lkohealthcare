@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * JWT Request Filter
@@ -57,18 +60,22 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             logger.info("Attempting to load user details for: " + username);
-            UserDetails userDetails = this.userService.loadUserByUsername(username);
-            
-            if (jwtUtil.validateToken(jwtToken, userDetails)) {
-                logger.info("JWT Token validated successfully for user: " + username);
-                logger.info("User authorities: " + userDetails.getAuthorities());
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = 
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-                logger.info("Authentication set in SecurityContext for user: " + username + " with authorities: " + userDetails.getAuthorities());
-            } else {
-                logger.warn("JWT Token validation failed for user: " + username);
+            try {
+                UserDetails userDetails = this.userService.loadUserByUsername(username);
+                
+                if (jwtUtil.validateToken(jwtToken, userDetails)) {
+                    logger.info("JWT Token validated successfully for user: " + username);
+                    logger.info("User authorities: " + userDetails.getAuthorities());
+                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = 
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                    logger.info("Authentication set in SecurityContext for user: " + username + " with authorities: " + userDetails.getAuthorities());
+                } else {
+                    logger.warn("JWT Token validation failed for user: " + username);
+                }
+            } catch (Exception e) {
+                logger.error("Error loading user details for: " + username + ", Error: " + e.getMessage());
             }
         } else {
             logger.warn("Username is null or authentication already exists. Username: " + username + ", Existing auth: " + (SecurityContextHolder.getContext().getAuthentication() != null));

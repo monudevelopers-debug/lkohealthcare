@@ -2,6 +2,7 @@ package com.lucknow.healthcare.service.impl;
 
 import com.lucknow.healthcare.entity.Provider;
 import com.lucknow.healthcare.entity.Booking;
+import com.lucknow.healthcare.entity.User;
 import com.lucknow.healthcare.enums.AvailabilityStatus;
 import com.lucknow.healthcare.enums.BookingStatus;
 import com.lucknow.healthcare.repository.ProviderRepository;
@@ -53,6 +54,27 @@ public class ProviderServiceImpl implements ProviderService {
         provider.setRating(0.0);
         provider.setTotalRatings(0);
         provider.setIsVerified(false);
+        
+        return providerRepository.save(provider);
+    }
+    
+    @Override
+    @Transactional
+    public Provider createProviderWithUser(User user, Provider provider) {
+        // Check if email already exists
+        if (providerRepository.findByEmail(provider.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Provider email already exists: " + provider.getEmail());
+        }
+        
+        // Set default values
+        provider.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+        provider.setRating(0.0);
+        provider.setTotalRatings(0);
+        provider.setIsVerified(false);
+        
+        // Link provider to user (assuming there's a user relationship in Provider entity)
+        // Note: This assumes the Provider entity has a user field or relationship
+        // If not, you may need to add this relationship to the Provider entity
         
         return providerRepository.save(provider);
     }

@@ -4,6 +4,8 @@ import com.lucknow.healthcare.entity.Booking;
 import com.lucknow.healthcare.entity.Provider;
 import com.lucknow.healthcare.entity.Review;
 import com.lucknow.healthcare.entity.User;
+import com.lucknow.healthcare.dto.BookingDTO;
+import com.lucknow.healthcare.mapper.BookingMapper;
 import com.lucknow.healthcare.enums.AvailabilityStatus;
 import com.lucknow.healthcare.enums.BookingStatus;
 import com.lucknow.healthcare.service.interfaces.BookingService;
@@ -54,6 +56,9 @@ public class ProviderController {
     
     @Autowired
     private ReviewService reviewService;
+    
+    @Autowired
+    private BookingMapper bookingMapper;
     
     /**
      * Create a new provider
@@ -512,7 +517,7 @@ public class ProviderController {
      */
     @GetMapping("/bookings")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public ResponseEntity<Page<Booking>> getProviderBookings(
+    public ResponseEntity<Page<BookingDTO>> getProviderBookings(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status) {
@@ -529,8 +534,91 @@ public class ProviderController {
             Pageable pageable = PageRequest.of(page, size);
             Page<Booking> bookings = bookingService.getBookingsByProvider(provider, pageable);
             
-            return ResponseEntity.ok(bookings);
+            // Convert to DTOs
+            Page<BookingDTO> bookingDTOs = bookings.map(bookingMapper::toDTO);
+            
+            return ResponseEntity.ok(bookingDTOs);
         } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get current provider's bookings for calendar view
+     * 
+     * @param startDate start date for the date range
+     * @param endDate end date for the date range
+     * @return ResponseEntity containing bookings for the date range
+     */
+    @GetMapping("/bookings/calendar")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<List<BookingDTO>> getProviderBookingsForCalendar(
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            Optional<Provider> providerOpt = providerService.findByEmail(email);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            LocalDate start = LocalDate.parse(startDate);
+            LocalDate end = LocalDate.parse(endDate);
+            
+            // Get all bookings for the provider within the date range
+            List<Booking> bookings = bookingService.getBookingsByProviderAndDateRange(provider, start, end);
+            
+            // Convert to DTOs
+            List<BookingDTO> bookingDTOs = bookings.stream()
+                .map(bookingMapper::toDTO)
+                .toList();
+            
+            return ResponseEntity.ok(bookingDTOs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get provider's bookings for calendar view (admin access)
+     * 
+     * @param providerId the provider ID
+     * @param startDate start date for the date range
+     * @param endDate end date for the date range
+     * @return ResponseEntity containing bookings for the date range
+     */
+    @GetMapping("/{providerId}/bookings/calendar")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<List<BookingDTO>> getProviderBookingsForCalendar(
+            @PathVariable UUID providerId,
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        try {
+            Optional<Provider> providerOpt = providerService.findById(providerId);
+            if (providerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Provider provider = providerOpt.get();
+            LocalDate start = LocalDate.parse(startDate);
+            LocalDate end = LocalDate.parse(endDate);
+            
+            // Get all bookings for the provider within the date range
+            List<Booking> bookings = bookingService.getBookingsByProviderAndDateRange(provider, start, end);
+            
+            // Convert to DTOs
+            List<BookingDTO> bookingDTOs = bookings.stream()
+                .map(bookingMapper::toDTO)
+                .toList();
+            
+            return ResponseEntity.ok(bookingDTOs);
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -699,7 +787,7 @@ public class ProviderController {
      */
     @GetMapping("/recent-bookings")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public ResponseEntity<List<Booking>> getRecentBookings(
+    public ResponseEntity<List<BookingDTO>> getRecentBookings(
             @RequestParam(defaultValue = "10") int limit) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -719,8 +807,12 @@ public class ProviderController {
                 .limit(limit)
                 .toList();
             
-            return ResponseEntity.ok(recentBookings);
+            // Convert to DTOs
+            List<BookingDTO> recentBookingDTOs = bookingMapper.toDTOList(recentBookings);
+            
+            return ResponseEntity.ok(recentBookingDTOs);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

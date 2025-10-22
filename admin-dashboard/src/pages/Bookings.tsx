@@ -19,6 +19,7 @@ import {
 
 import { getBookings, updateBookingStatus, assignProvider, getProviders } from '../services/api';
 import { Booking, Provider } from '../services/api';
+import ProviderAvailabilityCard from '../components/ProviderAvailabilityCard';
 
 const Bookings: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -608,6 +609,72 @@ const Bookings: React.FC = () => {
                 </div>
               </div>
 
+              {/* Patient Information */}
+              {selectedBooking.patient && (
+                <div className="bg-pink-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <User className="w-5 h-5 mr-2" />
+                    Patient Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Patient Name</label>
+                      <p className="text-sm text-gray-900 font-semibold bg-white px-3 py-2 rounded border">{selectedBooking.patient.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Age / Gender</label>
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.age} years / {selectedBooking.patient.gender}</p>
+                    </div>
+                    {selectedBooking.patient.bloodGroup && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Blood Group</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.bloodGroup}</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Relationship</label>
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.relationshipToCustomer}</p>
+                    </div>
+                    {selectedBooking.patient.isDiabetic && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Medical Condition</label>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          Diabetic
+                        </span>
+                      </div>
+                    )}
+                    {selectedBooking.patient.bpStatus !== 'NORMAL' && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">BP Status</label>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          {selectedBooking.patient.bpStatus} BP
+                        </span>
+                      </div>
+                    )}
+                    {selectedBooking.patient.allergies && (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Allergies</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.allergies}</p>
+                      </div>
+                    )}
+                    {selectedBooking.patient.chronicConditions && (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Chronic Conditions</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">{selectedBooking.patient.chronicConditions}</p>
+                      </div>
+                    )}
+                    {selectedBooking.patient.emergencyContactName && (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Emergency Contact</label>
+                        <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded border">
+                          {selectedBooking.patient.emergencyContactName} - {selectedBooking.patient.emergencyContactPhone}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Provider Information */}
               {selectedBooking.provider && (
                 <div className="bg-purple-50 p-4 rounded-lg">
@@ -775,51 +842,28 @@ const Bookings: React.FC = () => {
                   <p className="text-sm text-gray-500">Loading providers...</p>
                 </div>
               ) : (() => {
-                const availableProviders = (providersData?.content || []).filter(
+                const allProviders = providersData?.content || [];
+                const availableProviders = allProviders.filter(
                   (p: Provider) => p.availabilityStatus === 'AVAILABLE' || p.isAvailable
                 );
                 
-                return availableProviders.length === 0 ? (
+                return allProviders.length === 0 ? (
                   <div className="text-center py-8 bg-yellow-50 rounded-lg border border-yellow-200">
                     <AlertCircle className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-                    <p className="text-sm text-yellow-800 font-medium">No available providers at this time</p>
-                    <p className="text-xs text-yellow-700 mt-1">All providers are currently busy or offline</p>
+                    <p className="text-sm text-yellow-800 font-medium">No providers found</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {availableProviders.map((provider: Provider) => (
-                      <button
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {allProviders.map((provider: Provider) => (
+                      <ProviderAvailabilityCard
                         key={provider.id}
-                        onClick={() => setSelectedProviderId(provider.id)}
-                        className={`w-full p-4 text-left border-2 rounded-lg transition-all ${
-                          selectedProviderId === provider.id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h5 className="font-semibold text-gray-900">{provider.name}</h5>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Available
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-2">{provider.qualifications}</p>
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <span className="flex items-center">
-                                <Star className="w-3 h-3 mr-1 text-yellow-500" />
-                                {provider.rating} / 5.0
-                              </span>
-                              <span>{provider.experience} years exp.</span>
-                            </div>
-                          </div>
-                          {selectedProviderId === provider.id && (
-                            <CheckCircle className="w-6 h-6 text-blue-600 flex-shrink-0" />
-                          )}
-                        </div>
-                      </button>
+                        provider={provider}
+                        isSelected={selectedProviderId === provider.id}
+                        onSelect={() => setSelectedProviderId(provider.id)}
+                        bookingDate={selectedBooking?.scheduledDate || ''}
+                        bookingTime={selectedBooking?.scheduledTime || ''}
+                        bookingDuration={selectedBooking?.duration || 1}
+                      />
                     ))}
                   </div>
                 );

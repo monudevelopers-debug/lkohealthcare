@@ -1,13 +1,17 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCategories, useServices, useServicesByCategory, useSearchServices } from '../../lib/hooks/useServices';
 import { useDebounce } from '../../lib/hooks/useDebounce';
+import { usePatient } from '../../lib/context/PatientContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { formatCurrency } from '../../lib/utils/formatDate';
-import { MagnifyingGlassIcon, ClockIcon, TagIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ClockIcon, TagIcon, UserIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export const ServicesPage = () => {
+  const navigate = useNavigate();
+  const { selectedPatient } = usePatient();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
@@ -40,6 +44,35 @@ export const ServicesPage = () => {
             Professional healthcare delivered by qualified experts
           </p>
         </div>
+
+        {/* Patient Selection Notice */}
+        {!selectedPatient && (
+          <div className="mb-8 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                  <ExclamationTriangleIcon className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  📋 Select a Patient First
+                </h3>
+                <p className="text-gray-700 mb-4">
+                  For a better booking experience, please select which patient needs the service. 
+                  This helps our providers prepare and bring appropriate equipment.
+                </p>
+                <Button
+                  onClick={() => navigate('/patients')}
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  <UserIcon className="w-4 h-4 mr-2" />
+                  Select or Add Patient
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Search Bar */}
         <div className="mb-8 max-w-2xl mx-auto animate-scale-in">

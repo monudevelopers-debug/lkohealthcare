@@ -55,6 +55,15 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByProvider(Provider provider);
     
     /**
+     * Find bookings by provider with patient data loaded
+     * 
+     * @param provider the provider to filter by
+     * @return List of bookings for the specified provider with patient data
+     */
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.patient p LEFT JOIN FETCH b.user u LEFT JOIN FETCH b.service s LEFT JOIN FETCH b.provider pr WHERE b.provider = :provider")
+    List<Booking> findByProviderWithPatient(@Param("provider") Provider provider);
+    
+    /**
      * Find bookings by provider ID
      * 
      * @param providerId the provider ID to filter by
@@ -280,4 +289,14 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     Page<Booking> findByProvider(Provider provider, Pageable pageable);
     Page<Booking> findByProviderId(UUID providerId, Pageable pageable);
     Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
+    
+    /**
+     * Find bookings by provider with patient data loaded (pageable)
+     * 
+     * @param provider the provider to filter by
+     * @param pageable pagination information
+     * @return Page of bookings for the specified provider with patient data
+     */
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.patient p LEFT JOIN FETCH b.user u LEFT JOIN FETCH b.service s LEFT JOIN FETCH b.provider pr WHERE b.provider = :provider")
+    Page<Booking> findByProviderWithPatient(@Param("provider") Provider provider, Pageable pageable);
 }

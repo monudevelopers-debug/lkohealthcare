@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   PlusIcon, 
@@ -9,17 +10,26 @@ import {
   HeartIcon,
   BeakerIcon,
   DocumentTextIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 import { AddPatientForm } from '../../components/patients/AddPatientForm';
 import { patientsApi } from '../../lib/api/patients.api';
+import { usePatient } from '../../lib/context/PatientContext';
 import type { Patient } from '../../types/patient.types';
 
 export function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [viewPatient, setViewPatient] = useState<Patient | null>(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { setSelectedPatient } = usePatient();
+
+  const handleBookForPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    navigate('/services');
+  };
 
   // Fetch patients
   const { data: patients = [], isLoading, refetch } = useQuery({
@@ -226,21 +236,30 @@ export function PatientsPage() {
                 )}
 
                 {/* Actions */}
-                <div className="flex items-center space-x-2 pt-4 border-t">
+                <div className="flex flex-col gap-2 pt-4 border-t">
                   <button
-                    onClick={() => setSelectedPatient(patient)}
-                    className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                    onClick={() => handleBookForPatient(patient)}
+                    className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md text-sm font-semibold"
                   >
-                    <PencilIcon className="w-4 h-4 mr-1" />
-                    Edit
+                    <CalendarIcon className="w-4 h-4 mr-2" />
+                    Book Service for {patient.name}
                   </button>
-                  <button
-                    onClick={() => handleDeletePatient(patient.id, patient.name)}
-                    disabled={deleteMutation.isPending}
-                    className="inline-flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setViewPatient(patient)}
+                      className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                    >
+                      <PencilIcon className="w-4 h-4 mr-1" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeletePatient(patient.id, patient.name)}
+                      disabled={deleteMutation.isPending}
+                      className="inline-flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

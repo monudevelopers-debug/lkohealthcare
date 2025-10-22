@@ -31,7 +31,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param pageable pagination information
      * @return page of active patients
      */
-    Page<Patient> findByCustomerIdAndIsActiveTrue(UUID customerId, Pageable pageable);
+    @Query("SELECT p FROM Patient p WHERE p.customer.id = :customerId AND p.isActive = true")
+    Page<Patient> findByCustomerIdAndIsActiveTrue(@Param("customerId") UUID customerId, Pageable pageable);
     
     /**
      * Find all patients for a specific customer (including inactive)
@@ -40,7 +41,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param pageable pagination information
      * @return page of all patients
      */
-    Page<Patient> findByCustomerId(UUID customerId, Pageable pageable);
+    @Query("SELECT p FROM Patient p WHERE p.customer.id = :customerId")
+    Page<Patient> findByCustomerId(@Param("customerId") UUID customerId, Pageable pageable);
     
     /**
      * Find all active patients for a specific customer (list)
@@ -48,7 +50,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param customerId the customer's user ID
      * @return list of active patients
      */
-    List<Patient> findByCustomerIdAndIsActiveTrue(UUID customerId);
+    @Query("SELECT p FROM Patient p WHERE p.customer.id = :customerId AND p.isActive = true")
+    List<Patient> findByCustomerIdAndIsActiveTrue(@Param("customerId") UUID customerId);
     
     /**
      * Find patient by ID and customer ID (security check)
@@ -57,7 +60,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param customerId the customer's user ID
      * @return optional patient
      */
-    Optional<Patient> findByIdAndCustomerId(UUID id, UUID customerId);
+    @Query("SELECT p FROM Patient p WHERE p.id = :id AND p.customer.id = :customerId")
+    Optional<Patient> findByIdAndCustomerId(@Param("id") UUID id, @Param("customerId") UUID customerId);
     
     /**
      * Find patient by ID and customer ID for active patients only
@@ -66,7 +70,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param customerId the customer's user ID
      * @return optional patient
      */
-    Optional<Patient> findByIdAndCustomerIdAndIsActiveTrue(UUID id, UUID customerId);
+    @Query("SELECT p FROM Patient p WHERE p.id = :id AND p.customer.id = :customerId AND p.isActive = true")
+    Optional<Patient> findByIdAndCustomerIdAndIsActiveTrue(@Param("id") UUID id, @Param("customerId") UUID customerId);
     
     /**
      * Count active patients for a customer
@@ -74,7 +79,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param customerId the customer's user ID
      * @return count of active patients
      */
-    long countByCustomerIdAndIsActiveTrue(UUID customerId);
+    @Query("SELECT COUNT(p) FROM Patient p WHERE p.customer.id = :customerId AND p.isActive = true")
+    long countByCustomerIdAndIsActiveTrue(@Param("customerId") UUID customerId);
     
     /**
      * Find patients with medical conditions for a customer
@@ -102,7 +108,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param customerId the customer's user ID
      * @return list of patients with sensitive data flag
      */
-    List<Patient> findByCustomerIdAndIsSensitiveDataTrue(UUID customerId);
+    @Query("SELECT p FROM Patient p WHERE p.customer.id = :customerId AND p.isSensitiveData = true")
+    List<Patient> findByCustomerIdAndIsSensitiveDataTrue(@Param("customerId") UUID customerId);
     
     /**
      * Search patients by name for a customer
@@ -125,9 +132,10 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param relationship the relationship type
      * @return list of patients with specified relationship
      */
+    @Query("SELECT p FROM Patient p WHERE p.customer.id = :customerId AND p.relationshipToCustomer = :relationship AND p.isActive = true")
     List<Patient> findByCustomerIdAndRelationshipToCustomerAndIsActiveTrue(
-        UUID customerId, 
-        Patient.Relationship relationship
+        @Param("customerId") UUID customerId, 
+        @Param("relationship") Patient.Relationship relationship
     );
     
     /**
@@ -137,6 +145,7 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
      * @param customerId customer ID
      * @return true if patient exists and belongs to customer
      */
-    boolean existsByIdAndCustomerId(UUID id, UUID customerId);
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Patient p WHERE p.id = :id AND p.customer.id = :customerId")
+    boolean existsByIdAndCustomerId(@Param("id") UUID id, @Param("customerId") UUID customerId);
 }
 

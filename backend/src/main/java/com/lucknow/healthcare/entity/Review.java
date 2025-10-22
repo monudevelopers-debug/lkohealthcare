@@ -1,5 +1,7 @@
 package com.lucknow.healthcare.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -36,16 +38,19 @@ public class Review {
     @NotNull(message = "Booking is required")
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", nullable = false, unique = true)
+    @JsonIgnore
     private Booking booking;
     
     @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
     
     @NotNull(message = "Provider is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provider_id", nullable = false)
+    @JsonIgnore
     private Provider provider;
     
     @NotNull(message = "Rating is required")
